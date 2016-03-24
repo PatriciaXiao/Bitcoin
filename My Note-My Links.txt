@@ -1,0 +1,36 @@
+part of the blocks data:
+https://bitcoin.toshi.io/api/v0/blocks
+unconfirmed transaction:
+https://bitcoin.toshi.io/api/v0/transactions/unconfirmed
+a normal transaction:
+https://bitcoin.toshi.io/api/v0/transactions/4bd4a46103c245ce5dd723f1563acc519412d4facc7221949e967a91565ee3fd
+a block's first transaction (reward + fee):
+https://bitcoin.toshi.io/api/v0/transactions/f2a140b42b47c649a30823712dc568e25443ed390168c897ed5baa52cc50cc4a
+the code and explanation of the api above:
+https://github.com/coinbase/toshi
+
+latest data:
+https://blockchain.info/
+block chain api:
+https://blockchain.info/api
+block chain data api:
+https://blockchain.info/api/blockchain_api
+/* according to height: https://blockchain.info/block-height/0?format=json https://blockchain.info/block-height/1?format=json*/
+real-time query:
+https://blockchain.info/q
+real-time (with slight delay) market price:
+https://blockchain.info/api/exchange_rates_api
+
+trading with cash:
+http://blockmeta.com/home
+a miner (pool):
+http://blockmeta.com/miner/F2Pool
+trading data:
+http://blockmeta.com/data/txs
+a single transaction:
+http://blockmeta.com/tx/4bd4a46103c245ce5dd723f1563acc519412d4facc7221949e967a91565ee3fd
+a single block:
+http://blockmeta.com/block/399480
+
+bit coin basic concept:
+http://8btc.com/article-1783-1.html

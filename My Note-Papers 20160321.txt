@@ -1,0 +1,9 @@
+paper No.1: Bitcoin Transaction Graph Analysis
+
+goal: explore the level of anonymity in the Bitcoin system
+approach:
+1. annotate the public transaction graph by linking bitcoin public keys to real people - either definitively or statistically. (The “real” name here may be a person’s true name or username from an online public forum or any other public data source; associate numerous unrelated cryptographic IDs with an actual user)
+2. run the annotated graph through graph-analysis framework to find and summarize activity of both known and unknown users.
+
+system: scraping bitcoin addresses from public forums; include a mechanism for matching users to transactions using incomplete transaction information; also present a graph-analysis framework capable of tracing and clustering user activity.
+

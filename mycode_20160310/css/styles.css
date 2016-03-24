@@ -1,0 +1,50 @@
+/*
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+*/
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+/*
+.node text {
+  font: 9px helvetica;
+}
+
+*/
+.outlined {
+	border: thick solid #cb9348;
+}
+/**/
+
+
+
+.link line {
+/* stroke: #696969; /* support */
+/* stroke: #ccc; /* against */
+}
+.link line.separator {
+stroke: #fff; /* #ccc #fff*/ /* #000 */
+stroke-width: 2px;
+}
+.node circle {
+stroke: #000;
+/* stroke-width: 1.5px; */
+stroke-width: 0;
+}
+.node text {
+font: 10px sans-serif;
+pointer-events: none;
+}
+.node:not(:hover) .nodetext {
+display: none;
+}
+.link:not(:hover) .linktext {
+display: none;
+}
+.link text {
+font: 10px sans-serif;
+pointer-events: none;
+}

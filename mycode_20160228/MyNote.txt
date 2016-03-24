@@ -1,0 +1,63 @@
+cd C:\Users\Patricia\Desktop\Bitcoin\mycode\python
+
+bug1: // console
+XMLHttpRequest cannot load file:///C:/Users/Patricia/Desktop/Bitcoin/mycode/info.json. Cross origin requests are only supported for protocol schemes: http, data, chrome, chrome-extension, https, chrome-extension-resource.
+
+cd to your project directory, for instance
+
+cd /home/erick/mysuperproject
+and then simply use
+
+python -m SimpleHTTPServer
+python -m SimpleHTTPServer 8080 #指定端口号
+
+in the browser:
+
+http://localhost:8000
+
+bug2: // console
+favicon.ico:1 GET http://localhost:8000/favicon.ico 404 (File not found)
+
+http://stackoverflow.com/questions/1321878/how-to-prevent-favicon-ico-requests
+
+http://www.bitbug.net/
+
+bug3: // coding
+$getjson could not return value correctly
+
+http://www.cnblogs.com/hqjma/p/3169556.html
+
+it should be used within the load function, as it is not synch (file read setting)
+
+
+
+
+
+reflist1: D3
+https://d3js.org/
+https://github.com/mbostock/d3/wiki/Gallery
+http://javascript.ruanyifeng.com/library/d3.html
+http://www.oschina.net/p/d3
+
+<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+reflist2: jQuery
+http://www.w3school.com.cn/jquery/index.asp
+http://api.jquery.com/jQuery.getJSON/
+
+reflist3: project
+
+http://bl.ocks.org/mbostock/4062045
+http://www.coppelia.io/2014/07/an-a-to-z-of-extra-features-for-the-d3-force-layout/
+https://github.com/d3/d3-plugins/tree/master/fisheye
+https://bost.ocks.org/mike/fisheye/
+
+additional:
+sigma
+http://sigmajs.org/
+
+
+
+remaining problems:
+labeling
+interacting (search)

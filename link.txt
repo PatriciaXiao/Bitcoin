@@ -1,0 +1,36 @@
+http://vis.pku.edu.cn/wiki/visgroup/projects/tradevis/start
+https://bitcoin.org/en/
+https://toshi.io/docs/#introduction
+http://www.bitcoinlinks.net/tag/transaction-visualizations
+https://en.bitcoin.it/wiki/Transaction
+https://blockchain.info
+
+
+https://toshi.io/docs/
+https://toshi.io/
+https://bitcoin.toshi.io/
+https://bitcoin.toshi.io/api/v0/transactions/bc2aa9d1e04f915d19bd8a4270f5e1c7bd683b30e59523219619ed281f9cc62d
+
+https://blockchain.info/
+https://github.com/coinbase/toshi
+http://blockmeta.com/home
+https://en.bitcoin.it/wiki/Transaction
+https://en.bitcoin.it/wiki/Block
+
+可能的话题：
+疑似用于洗钱、走私等犯罪的转账（黑客攻击：偷秘钥-无法监管，洗钱-也许有规律，）
+疑似炒比特币等行为(疑似2011~2014在国内热起来)
+疑似比特币窃贼的行为
+攻击(http://8btc.com/article-1949-1.html 51%攻击？掌握算力？可以监控？----似乎从交易记录看不出来？)
+
+疑问：
+和其他种类的虚拟货币有什么不同？(http://www.bitecoin.com/copycoin)（山寨币 http://blog.sina.com.cn/s/blog_5513b1cd0102eepc.html）
+为什么有人说比特币是庞氏骗局？
+混币的影响？
+兑换成现实货币的行为数据？价格波动数据？(https://exchange.btcc.com/)(https://zeroblock.com/trading/)(目前数据太宏观)
+
+多个地址同一用户可以追踪出来吗？
+交易所是干嘛的，是必须的吗？(http://www.baike.com/wiki/%E6%AF%94%E7%89%B9%E5%B8%81%E4%BA%A4%E6%98%93%E6%89%80)----比特币/比特币衍生品 & 法定货币交易平台
+branch main 是什么意思？区块主分支？
+
+http://8btc.com/article-1783-1.html
