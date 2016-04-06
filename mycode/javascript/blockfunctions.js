@@ -1,11 +1,12 @@
 var FILE_DIR = "data/";
-var G_WIDTH1 = 960;
-var G_HEIGHT1 = 600;
+var G_WIDTH1 = $(window).width();//960;
+var G_HEIGHT1 = $(window).height();//600;
 var SIZE_UNIT = 5;
 
 // functions about block
 var RAW_DATA;
 var GRAPH_DAT;
+var ADDR_LIST = new Map(); // function included in mymap.js
 
 function showblock() {
 	var goal_block = block_height.value;
@@ -18,14 +19,32 @@ function showblock() {
 	});
 }
 
+function mycolor(d, color, colorB){
+	var colorRGB = "#000000";
+	if (d._children) {
+		// totally collapsed
+		colorRGB = colorB(d.color_val);
+	}
+	else if (d.children) {
+		// have expanded leafs
+		colorRGB = "#aaaaaa";
+	}
+	else {
+		// leaf
+		colorRGB = color(d.color_val);
+	}
+	return colorRGB;
+}
+
 function update() {
 	var rawdata = RAW_DATA;
 	var graph = update_graph_data(GRAPH_DAT);
+	var color = d3.scale.category20();
+	var colorB = d3.scale.category20b();
 	// basic parameters settings
 	var offset = 12;
 	var width = G_WIDTH1, 
 		height = G_HEIGHT1;
-	var color = d3.scale.category20();
 	var force = d3.layout.force()
 				.charge(-120)
 				.linkDistance(30)
@@ -50,48 +69,11 @@ function update() {
 				.attr("d", "M0,-5L10,0L0,5 L10,0 L0, -5")
 				.style("stroke", "#4679BD")
 				.style("opacity", "0.6");
-	// processing data
-	// var graph = update_graph_data(GRAPH_DAT);
-/*	test_child = {"name": "hello world", "color_val": 0};// debug01
-	var graph = {"nodes": [], "links": []};
-	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
-		var input_list;
-		var output_list;
-		var color_val = rawdata.blocks[0].tx[i].tx_index;
-		if (i != 0) {
-			// not the first tx
-			input_list = rawdata.blocks[0].tx[i].inputs;
-			output_list = rawdata.blocks[0].tx[i].out;
-		}
-		else {
-			// the first tx
-			input_list = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}, "color_val": color_val}];
-			output_list = rawdata.blocks[0].tx[i].out;
-		}
-		// input list
-		for (var j = 0; j < input_list.length; j++) {
-			graph.nodes[cnt_node + j] = {"name": input_list[j].prev_out.addr, "color_val": color_val};
-		}
-		// output list
-		for (var j = 0; j < output_list.length; j++) {
-			graph.nodes[cnt_node + input_list.length + j] = {"name": output_list[j].addr, "color_val": color_val};
-		}
-		// links
-		for (var j = 0; j < input_list.length; j++) {
-			for (var k = 0; k < output_list.length; k++) {
-				// if haven't been recorded already
-				graph.links[cnt_link] = {"source": cnt_node + j, "target": cnt_node + input_list.length + k,"value": 1};
-				cnt_link++;
-			}
-		}
-		cnt_node += (input_list.length + output_list.length);
-	}*/
-	/////
 	// draw the force-layout graph
 	force
-		.nodes(graph.nodes)
+		.nodes(graph.nodes) //debug01
 		.links(graph.links)
-		.on("tick", tick) // debug add
+		.on("tick", tick) 
 		.start();
 	// set the links
 	var link = svg.selectAll(".link")
@@ -108,11 +90,13 @@ function update() {
 				.enter().append("g")
 				.attr("class", "node")
 				.call(force.drag);
+
 	node.append("circle")
 		.attr("r", function(d) { return SIZE_UNIT; })
 		.on("click", click_node)
-		.style("fill", function(d) { return color(d.color_val); });
-
+		.style("fill", function(d) {
+			return mycolor(d, color, colorB); //debug02
+		});
 
 	node.append("title")
 			.text(function(d) {
@@ -150,13 +134,10 @@ function click_node(d) {
 			d.children = d._children;
 			d._children = null;
 		}
-		console.log(d.name + " children / _children"); //debug01
-		console.log(d.children);
-		console.log(d._children);
 		update();
 	}
 }
-
+/*
 function init_graph_data(rawdata) {
 	test_child = {"name": "hello world", "color_val": 0};// debug01
 	var graph = {"nodes": [], "links": []};
@@ -195,9 +176,84 @@ function init_graph_data(rawdata) {
 	}
 	return graph;
 }
+*/
+
+function init_graph_data(rawdata) {
+	test_child = {"name": "hello world", "color_val": 0};// debug01
+	var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": [], "child_nodes": [], "child_links": []};
+	// general count
+	var cnt_node = 0, cnt_link = 0;
+	// for each i
+	var input_list = [];
+	var output_list = [];
+	var color_val = []; // depend on tx_index
+	// the first tx
+	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}, "color_val": color_val}];
+	output_list[0] = rawdata.blocks[0].tx[0].out;
+	color_val[0] = rawdata.blocks[0].tx[0].tx_index;
+	// not the first tx
+	for (var i = 1; i < rawdata.blocks[0].tx.length; i++) {
+		color_val[i] = rawdata.blocks[0].tx[i].tx_index;
+		input_list[i] = rawdata.blocks[0].tx[i].inputs;
+		output_list[i] = rawdata.blocks[0].tx[i].out;
+	}
+	// process data
+	for (var i = 0; i < rawdata.blocks[0].tx.length; i++) { // for each tx
+		// input list
+		for (var j = 0; j < input_list[i].length; j++) {
+			// decide the node's index (parent-child)
+			//if (ADDR_LIST.get(input_list[i][j].prev_out.addr) == undefined) {
+				// not yet inserted
+			//}
+			graph.init_nodes[cnt_node + j] = {"name": input_list[i][j].prev_out.addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [test_child, test_child]};
+		}
+		// output list
+		for (var j = 0; j < output_list[i].length; j++) {
+			// decide the nodes's index
+			graph.init_nodes[cnt_node + input_list[i].length + j] = {"name": output_list[i][j].addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [test_child]};
+		}
+		// links
+		for (var j = 0; j < input_list[i].length; j++) {
+			for (var k = 0; k < output_list[i].length; k++) {
+				// if haven't been recorded already
+				graph.init_links[cnt_link] = {"source": cnt_node + j, "target": cnt_node + input_list[i].length + k,"value": 1};
+				cnt_link++;
+			}
+		}
+		cnt_node += (input_list[i].length + output_list[i].length);
+	}
+	// transform data into graph.nodes and graph.links
+	var idx_parent = -1;
+	for (var i = 0; i < rawdata.blocks[0].tx.length; i++) {
+		// iterate through all the tx records in a block
+		if (ADDR_LIST.get("000") == undefined)
+			console.log("hello world");
+	}
+
+	// tmpchild = [test_child];
+	// graph.init_nodes = graph.init_nodes.concat(tmpchild);//debug01
+
+	graph.nodes = graph.init_nodes;
+	graph.links = graph.init_links;
+
+	return graph;
+}
 
 function update_graph_data(graph) {
 	var newgraph = graph;
 	// modify the new graph
+	graph.child_nodes = [];
+	graph.child_links = [];
+	for (var i = 0; i < graph.init_nodes.length; i++) {
+		if (graph.init_nodes[i].children) {
+			for (var j = 0; j < graph.init_nodes[i].children.length; j++) {
+				graph.child_links[graph.child_links.length] = {"source": i, "target": graph.init_nodes.length + graph.child_nodes.length + j,"value": 1};
+			}
+			graph.child_nodes = graph.child_nodes.concat(graph.init_nodes[i].children);
+		}
+	}
+	// combine together
+	newgraph.nodes = graph.init_nodes.concat(graph.child_nodes);
+	newgraph.links = graph.init_links.concat(graph.child_links); // link needs to be modified for it is marked as index
 	return newgraph;
 }
