@@ -179,7 +179,6 @@ function init_graph_data(rawdata) {
 */
 
 function init_graph_data(rawdata) {
-	test_child = {"name": "hello world", "color_val": 0};// debug01
 	var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": [], "child_nodes": [], "child_links": []};
 	// general count
 	var cnt_node = 0, cnt_link = 0;
@@ -188,7 +187,7 @@ function init_graph_data(rawdata) {
 	var output_list = [];
 	var color_val = []; // depend on tx_index
 	// the first tx
-	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}, "color_val": color_val}];
+	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
 	color_val[0] = rawdata.blocks[0].tx[0].tx_index;
 	// not the first tx
@@ -205,12 +204,12 @@ function init_graph_data(rawdata) {
 			//if (ADDR_LIST.get(input_list[i][j].prev_out.addr) == undefined) {
 				// not yet inserted
 			//}
-			graph.init_nodes[cnt_node + j] = {"name": input_list[i][j].prev_out.addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [test_child, test_child]};
+			graph.init_nodes[cnt_node + j] = {"name": input_list[i][j].prev_out.addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [{"name": "hello world", "color_val": 0}, {"name": "hello world", "color_val": 0}]};
 		}
 		// output list
 		for (var j = 0; j < output_list[i].length; j++) {
 			// decide the nodes's index
-			graph.init_nodes[cnt_node + input_list[i].length + j] = {"name": output_list[i][j].addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [test_child]};
+			graph.init_nodes[cnt_node + input_list[i].length + j] = {"name": output_list[i][j].addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [{"name": "hello world", "color_val": 0}]};
 		}
 		// links
 		for (var j = 0; j < input_list[i].length; j++) {
@@ -242,8 +241,20 @@ function init_graph_data(rawdata) {
 function update_graph_data(graph) {
 	var newgraph = graph;
 	// modify the new graph
+	
 	graph.child_nodes = [];
 	graph.child_links = [];
+	// test collapsible
+	
+	/*
+	test_child = {"name": "hello world", "color_val": 0};// debug02
+	test_child2 = {"name": "hello world", "color_val": 0};// debug02
+	if(graph.init_nodes[0].children) {
+		graph.child_links[0] = {"source": 0, "target": graph.init_nodes.length,"value": 1};
+		graph.child_nodes[0] = test_child;
+		graph.child_nodes[1] = test_child2;
+	}
+	*/
 	for (var i = 0; i < graph.init_nodes.length; i++) {
 		if (graph.init_nodes[i].children) {
 			for (var j = 0; j < graph.init_nodes[i].children.length; j++) {
@@ -252,6 +263,15 @@ function update_graph_data(graph) {
 			graph.child_nodes = graph.child_nodes.concat(graph.init_nodes[i].children);
 		}
 	}
+	
+	/*
+	test_child = {"name": "hello world", "color_val": 0};// debug02
+	//graph.child_nodes = [test_child]; // works
+	graph.child_nodes = [];
+	var test_group = [test_child, test_child];
+	graph.child_nodes = graph.child_nodes.concat([test_child]); // works
+	graph.child_nodes = graph.child_nodes.concat(test_group); // doesn't work
+	*/
 	// combine together
 	newgraph.nodes = graph.init_nodes.concat(graph.child_nodes);
 	newgraph.links = graph.init_links.concat(graph.child_links); // link needs to be modified for it is marked as index
