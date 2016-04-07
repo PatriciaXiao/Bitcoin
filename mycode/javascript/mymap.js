@@ -115,6 +115,24 @@ function Map() {
         s+="}";
         return s;
     };
+
+    this.clear = function(){
+        //this.keys.length = 0;
+        //this.data.length = 0;
+        /*
+        var len = this.keys.length;
+        for(var i=0;i<len;i++){
+            var k = this.keys[i];
+            this.keys.remove(k);
+            this.data[k] = null;
+        }
+        */
+        delete this.keys;
+        delete this.data;
+        this.keys = new Array();
+        this.data = new Object();
+        return this.keys.length;
+    }
 }
  
  

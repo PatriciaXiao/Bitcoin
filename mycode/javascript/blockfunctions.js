@@ -21,11 +21,11 @@ function showblock() {
 
 function mycolor(d, color, colorB){
 	var colorRGB = "#000000";
-	if (d._children) {
+	if (d._children && d._children.length > 0) {
 		// totally collapsed
 		colorRGB = colorB(d.color_val);
 	}
-	else if (d.children) {
+	else if (d.children && d.children.length > 0) {
 		// have expanded leafs
 		colorRGB = "#aaaaaa";
 	}
@@ -137,49 +137,26 @@ function click_node(d) {
 		update();
 	}
 }
-/*
-function init_graph_data(rawdata) {
-	test_child = {"name": "hello world", "color_val": 0};// debug01
-	var graph = {"nodes": [], "links": []};
-	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
-		var input_list;
-		var output_list;
-		var color_val = rawdata.blocks[0].tx[i].tx_index;
-		if (i != 0) {
-			// not the first tx
-			input_list = rawdata.blocks[0].tx[i].inputs;
-			output_list = rawdata.blocks[0].tx[i].out;
-		}
-		else {
-			// the first tx
-			input_list = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}, "color_val": color_val}];
-			output_list = rawdata.blocks[0].tx[i].out;
-		}
-		// input list
-		for (var j = 0; j < input_list.length; j++) {
-			//graph.nodes[cnt_node + j] = {"name": input_list[j].prev_out.addr, "color_val": color_val}; // debug01
-			graph.nodes[cnt_node + j] = {"name": input_list[j].prev_out.addr, "color_val": color_val, "children": [test_child, test_child]};
-		}
-		// output list
-		for (var j = 0; j < output_list.length; j++) {
-			graph.nodes[cnt_node + input_list.length + j] = {"name": output_list[j].addr, "color_val": color_val};
-		}
-		// links
-		for (var j = 0; j < input_list.length; j++) {
-			for (var k = 0; k < output_list.length; k++) {
-				// if haven't been recorded already
-				graph.links[cnt_link] = {"source": cnt_node + j, "target": cnt_node + input_list.length + k,"value": 1};
-				cnt_link++;
-			}
-		}
-		cnt_node += (input_list.length + output_list.length);
+
+function NickName(type, value) {
+	var name;
+	switch(type) {
+		case 0: // var = number
+			name = "Node" + value;
+			break;
+		case 1: // value = address
+			name = "addr: " + value;
+			break;
+		default:
+			name = "EMANON";
+			break;
 	}
-	return graph;
+	return name;
 }
-*/
 
 function init_graph_data(rawdata) {
 	var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": [], "child_nodes": [], "child_links": []};
+	ADDR_LIST.clear(); // important
 	// general count
 	var cnt_node = 0, cnt_link = 0;
 	// for each i
@@ -198,43 +175,102 @@ function init_graph_data(rawdata) {
 	}
 	// process data
 	for (var i = 0; i < rawdata.blocks[0].tx.length; i++) { // for each tx
+		var idx_input = -1;
+		var idx_output = -1;
 		// input list
+		// judge if the person already exists // IMPORTANT: will consider merging two different points latter
 		for (var j = 0; j < input_list[i].length; j++) {
 			// decide the node's index (parent-child)
-			//if (ADDR_LIST.get(input_list[i][j].prev_out.addr) == undefined) {
-				// not yet inserted
-			//}
-			graph.init_nodes[cnt_node + j] = {"name": input_list[i][j].prev_out.addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [{"name": "hello world", "color_val": 0}, {"name": "hello world", "color_val": 0}]};
-		}
-		// output list
-		for (var j = 0; j < output_list[i].length; j++) {
-			// decide the nodes's index
-			graph.init_nodes[cnt_node + input_list[i].length + j] = {"name": output_list[i][j].addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": [{"name": "hello world", "color_val": 0}]};
-		}
-		// links
-		for (var j = 0; j < input_list[i].length; j++) {
-			for (var k = 0; k < output_list[i].length; k++) {
-				// if haven't been recorded already
-				graph.init_links[cnt_link] = {"source": cnt_node + j, "target": cnt_node + input_list[i].length + k,"value": 1};
-				cnt_link++;
+			var tmp = ADDR_LIST.get(input_list[i][j].prev_out.addr);
+			if (tmp != undefined) {
+				idx_input = tmp
+				break; // will change here if considering "merge"
 			}
 		}
-		cnt_node += (input_list[i].length + output_list[i].length);
+		if (idx_input == -1) { // not yet inserted
+			graph.init_nodes[cnt_node] = {"name": NickName(0, cnt_node), "color_val": i, "times": 1, "amount": 1, "_children": []};
+			idx_input = cnt_node;
+			for (var j = 0; j < input_list[i].length; j++) {
+				// update information for each node
+				ADDR_LIST.put(input_list[i][j].prev_out.addr, cnt_node);
+				//console.log(ADDR_LIST.get(input_list[i][j].prev_out.addr));
+				graph.init_nodes[cnt_node]._children[j] = 
+						{"name": NickName(1, input_list[i][j].prev_out.addr), 
+						"addr":input_list[i][j].prev_out.addr, 
+						"color_val": color_val[i], "times": 1, "amount": 1, "_children": []};
+			}
+			cnt_node++;
+		}
+		else {
+			// insert into graph.init_nodes[idx_input]
+			for (var j = 0; j < input_list[i].length; j++) {
+				// count++
+				graph.init_nodes[idx_input].times++;
+				// judge if the node did exist
+				var tmp = ADDR_LIST.get(input_list[i][j].prev_out.addr);
+				if (tmp != undefined) {
+					// already exist; very IMPORTANT: latter this would be used for "merge"; for now, we agree for sure that merge isn't required
+					//    that is to say, tmp == idx_input
+					// find the corresponding child node
+					var idx_addr = -1;
+					for (var k = 0; k < graph.init_nodes[idx_input]._children.length; k++) {
+						if (graph.init_nodes[idx_input]._children[k].addr == input_list[i][j].prev_out.addr) {
+							idx_addr = k;
+							break;
+						}
+					}
+					graph.init_nodes[idx_input]._children[idx_addr].times++;
+				}
+				else {
+					ADDR_LIST.put(input_list[i][j].prev_out.addr, idx_input);
+					graph.init_nodes[idx_input]._children.push(
+							{"name": NickName(1, input_list[i][j].prev_out.addr),
+							"addr": input_list[i][j].prev_out.addr, 
+							"color_val": color_val[i], "times": 1, "amount": 1, "_children": []});
+				}
+			}			
+		}
+		// output list
+		for (var j = 0; j < output_list[i].length; j++) { // for each output
+			// decide the nodes's index
+			// graph.init_nodes[cnt_node] = {"name": output_list[i][j].addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": []};
+			// check if it's been existed
+			idx_output = ADDR_LIST.get(output_list[i][j].addr);
+			if (idx_output == undefined) {
+				// not existed yet
+				graph.init_nodes[cnt_node] = {"name": NickName(0, cnt_node), "color_val": i, "times": 1, "amount": 1, "_children": []};
+				graph.init_nodes[cnt_node]._children[0] = 
+						{"name": NickName(1, output_list[i][j].addr),
+						"addr": output_list[i][j].addr,
+						"color_val": color_val[i], "times": 1, "amount": 1, "_children": []};
+				idx_output = cnt_node;
+				cnt_node++;
+			}
+			else {
+				// has already existed
+				var idx_addr = -1;
+				for(var k = 0; k < graph.init_nodes[cnt_node]._children.length; k++) {
+					// find the goal addr
+					if (graph.init_nodes[idx_output]._children[k].addr == output_list[i][j].addr) {
+						idx_addr = k;
+						break;
+					}
+				}
+				graph.init_nodes[idx_output]._children[idx_addr].times++;
+			}
+			// links
+			graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output,"value": 1};
+			cnt_link++;
+		}
 	}
-	// transform data into graph.nodes and graph.links
-	var idx_parent = -1;
-	for (var i = 0; i < rawdata.blocks[0].tx.length; i++) {
-		// iterate through all the tx records in a block
-		if (ADDR_LIST.get("000") == undefined)
-			console.log("hello world");
-	}
-
-	// tmpchild = [test_child];
-	// graph.init_nodes = graph.init_nodes.concat(tmpchild);//debug01
-
+	/*
+	// debug
+	ADDR_LIST.each(function(a,b,c){
+		console.log(a+"\n"+b+"\n"+c+"\n")
+	});
+	*/
 	graph.nodes = graph.init_nodes;
 	graph.links = graph.init_links;
-
 	return graph;
 }
 
@@ -244,17 +280,7 @@ function update_graph_data(graph) {
 	
 	graph.child_nodes = [];
 	graph.child_links = [];
-	// test collapsible
-	
-	/*
-	test_child = {"name": "hello world", "color_val": 0};// debug02
-	test_child2 = {"name": "hello world", "color_val": 0};// debug02
-	if(graph.init_nodes[0].children) {
-		graph.child_links[0] = {"source": 0, "target": graph.init_nodes.length,"value": 1};
-		graph.child_nodes[0] = test_child;
-		graph.child_nodes[1] = test_child2;
-	}
-	*/
+
 	for (var i = 0; i < graph.init_nodes.length; i++) {
 		if (graph.init_nodes[i].children) {
 			for (var j = 0; j < graph.init_nodes[i].children.length; j++) {
@@ -263,15 +289,6 @@ function update_graph_data(graph) {
 			graph.child_nodes = graph.child_nodes.concat(graph.init_nodes[i].children);
 		}
 	}
-	
-	/*
-	test_child = {"name": "hello world", "color_val": 0};// debug02
-	//graph.child_nodes = [test_child]; // works
-	graph.child_nodes = [];
-	var test_group = [test_child, test_child];
-	graph.child_nodes = graph.child_nodes.concat([test_child]); // works
-	graph.child_nodes = graph.child_nodes.concat(test_group); // doesn't work
-	*/
 	// combine together
 	newgraph.nodes = graph.init_nodes.concat(graph.child_nodes);
 	newgraph.links = graph.init_links.concat(graph.child_links); // link needs to be modified for it is marked as index

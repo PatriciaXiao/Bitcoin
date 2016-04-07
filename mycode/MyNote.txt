@@ -73,3 +73,25 @@ block the skype plugin on chrome
 
 // init_graph - load in; once
 // update_graph - click - child
+
+http://www.open-open.com/lib/view/open1420880796484.html
+
+index merge? (1,2) (3,4) (2,3) like this?
+
+// in each tx
+// all the inputs are from the same account
+if ()
+// output uncertain
+
+array?no, nodelink:
+basic_node: "person"	B_node
+derivative_node: "addr"	D_node
+map(D_node, B_node)
+when new tx is included:
+- check if it has appeared (same addr) in Map
+-- if only once:
+-- if multiple: // merge two existing B_node by:
+----
+- insert it
+
+general->each block
