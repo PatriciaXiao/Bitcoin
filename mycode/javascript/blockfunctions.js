@@ -10,6 +10,24 @@ var RAW_DATA;
 var GRAPH_DAT;
 var ADDR_LIST = new Map(); // function included in mymap.js
 
+// the slider
+function refreshBlockSwatch() {
+	//debuging
+	var tmp = $("#block_slider").slider("value");
+	if (tmp%5==0)
+		console.log("temp value of the slider is: "+ tmp);
+}
+$(function() {
+	$("#block_slider").slider({
+      orientation: "horizontal",
+      //range: "max",
+      max: 255,
+      value: 0,
+      slide: refreshBlockSwatch,
+      change: refreshBlockSwatch
+    });
+});
+
 function showblock() {
 	var goal_block = block_height.value;
 	var goal_file = FILE_DIR + goal_block + ".json";
@@ -132,6 +150,7 @@ function update() {
 
 // Toggle children on click.
 function click_node(d) {
+	// change color
 	if (!d3.event.defaultPrevented) {
 		if (d.children) {
 			d._children = d.children;
@@ -143,6 +162,9 @@ function click_node(d) {
 		}
 		update();
 	}
+	//alert(d.addr);// unexpected phenomenon: reshaped too much?
+	//console.log(window.document);
+	document.getElementById("node_description_addr").innerHTML = "address: "+d.addr;
 }
 
 function NickName(type, value) {
@@ -188,6 +210,8 @@ function init_graph_data(rawdata) {
 		// judge if the person already exists // IMPORTANT: will consider merging two different points latter
 		var cand_nodelist = []; // candidate node list
 		var tmp_map = new Map();
+		if (graph.init_nodes.length > 155) // debug
+			console.log(graph.init_nodes[155]); // it works here
 		for (var j = 0; j < input_list[i].length; j++) {
 			// decide the node's index (parent-child)
 			//console.log("input i="+i+" j="+j+ "\naddr: " + input_list[i][j].prev_out.addr + "\nindex:"+ADDR_LIST.get(input_list[i][j].prev_out.addr)+"\n");
@@ -201,7 +225,19 @@ function init_graph_data(rawdata) {
 		delete tmp_map;
 		// merge the nodes
 		if (cand_nodelist.length > 0) {
+			var tmp_idx = 0;
 			idx_input = cand_nodelist[0];
+			for (var j = 1; j < cand_nodelist.length; j++) {
+				if (cand_nodelist[j] < idx_input) {
+					idx_input = cand_nodelist[j];
+					tmp_idx = j;
+				}
+			}
+			if (tmp_idx != 0) {
+				var tmp_elem = cand_nodelist[0];
+				cand_nodelist[0] = cand_nodelist[tmp_idx];
+				cand_nodelist[tmp_idx] = tmp_elem;
+			} // idx_input should be kept unchanged and by default it is the 0-th element
 		}
 		else{
 			idx_input = -1;
@@ -231,9 +267,18 @@ function init_graph_data(rawdata) {
 		//console.log("i:"+i+"\n");
 		for (var j = 1; j < cand_nodelist.length; j++) { // for each candicate // notice: what if two candidates are the same?
 			// merge all of them onto idx_input by:
-			console.log("Merging......"+"Node"+cand_nodelist[j]+".......to: Node"+idx_input)
+			console.log("Merging......"+"Node"+cand_nodelist[j]+".......to: Node"+idx_input);
 			// 1. passing all the children
 			//console.log("j:"+j+"\n");
+			/*
+			console.log((cand_nodelist[j]==155)+","+(idx_input==141));
+			if (cand_nodelist[j] == 155 && idx_input == 141) {
+				// debug
+				console.log("length="+graph.init_nodes.length);
+				console.log(graph.init_nodes[155]);
+				console.log(graph.init_nodes[141]); // bug is caused by [155] == undefined
+			}
+			//*/
 			for (var k = 0; k < graph.init_nodes[cand_nodelist[j]]._children.length; k++) { // for each child
 				//console.log("k:"+k+"\n");
 				ADDR_LIST.put(graph.init_nodes[cand_nodelist[j]]._children[k].addr, idx_input);
@@ -253,7 +298,7 @@ function init_graph_data(rawdata) {
 			// 3. for now, don't really remove the node in the init_node array, instead, I choose to take the tail to replace their blanks
 			// ATTENTION: what if the element to be get rid of is the very last one for now?
 			if (graph.init_nodes.length-1 != cand_nodelist[j]) {
-				console.log(graph.init_nodes.length);
+				//console.log(graph.init_nodes.length);
 				//graph.init_nodes[cand_nodelist[j]] = graph.init_nodes[graph.init_nodes.length - 1];
 				graph.init_nodes[cand_nodelist[j]] = graph.init_nodes[graph.init_nodes.length - 1];
 				for (var k = 0; k < graph.init_nodes[graph.init_nodes.length-1]._children.length; k++) { // for each child
