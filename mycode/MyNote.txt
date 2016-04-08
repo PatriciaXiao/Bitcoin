@@ -1,4 +1,5 @@
 cd C:\Users\Patricia\Desktop\Bitcoin\mycode\python
+cd C:\Users\Patricia\Desktop\Bitcoin\mycode\
 
 bug1: // console
 XMLHttpRequest cannot load file:///C:/Users/Patricia/Desktop/Bitcoin/mycode/info.json. Cross origin requests are only supported for protocol schemes: http, data, chrome, chrome-extension, https, chrome-extension-resource.
@@ -95,3 +96,9 @@ when new tx is included:
 - insert it
 
 general->each block
+
+http://vis.pku.edu.cn/wiki/visgroup/projects/tradevis/start
+http://vis.pku.edu.cn/wiki/visgroup/projects/tradevis/browser/start
+
+200000:height
+test3
