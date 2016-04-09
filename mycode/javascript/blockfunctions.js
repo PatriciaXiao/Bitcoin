@@ -10,12 +10,35 @@ var RAW_DATA;
 var GRAPH_DAT;
 var ADDR_LIST = new Map(); // function included in mymap.js
 
+// time-stamp
+// reference: http://www.cnblogs.com/yjf512/p/3796229.html
+function formatDate(now) {
+	var newDate = new Date();
+	newDate.setTime(now * 1000);
+	// Wed Jun 18 2014 
+	// console.log(newDate.toDateString());
+	// Wed, 18 Jun 2014 02:33:24 GMT 
+	// console.log(newDate.toGMTString());
+	return newDate.toGMTString();
+}
+function FormatDateList(array) {
+	var date_list = [];
+	for (var i = 0; i < array.length; i++) {
+		date_list[i] = formatDate(array);
+	}
+	return date_list;
+}
+
 // the slider
 function refreshBlockSwatch() {
 	//debuging
+	/*
 	var tmp = $("#block_slider").slider("value");
 	if (tmp%5==0)
 		console.log("temp value of the slider is: "+ tmp);
+	*/
+	var value = $("#block_slider").slider("value");
+	document.getElementById("slider_information_debug").innerHTML = "slider value: "+value;
 }
 $(function() {
 	$("#block_slider").slider({
@@ -165,6 +188,7 @@ function click_node(d) {
 	//alert(d.addr);// unexpected phenomenon: reshaped too much?
 	//console.log(window.document);
 	document.getElementById("node_description_addr").innerHTML = "address: "+d.addr;
+	document.getElementById("node_description_time").innerHTML = "time: "+FormatDateList(d.time);
 }
 
 function NickName(type, value) {
@@ -192,15 +216,18 @@ function init_graph_data(rawdata) {
 	var input_list = [];
 	var output_list = [];
 	var color_val = []; // depend on tx_index
+	var time_list = []; // time stamps
 	// the first tx
 	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
 	color_val[0] = rawdata.blocks[0].tx[0].tx_index;
+	time_list[0] = time_list[i] = rawdata.blocks[0].tx[0].time;
 	// not the first tx
 	for (var i = 1; i < rawdata.blocks[0].tx.length; i++) {
 		color_val[i] = rawdata.blocks[0].tx[i].tx_index;
 		input_list[i] = rawdata.blocks[0].tx[i].inputs;
 		output_list[i] = rawdata.blocks[0].tx[i].out;
+		time_list[i] = rawdata.blocks[0].tx[i].time;
 	}
 	// process data
 	for (var i = 0; i < rawdata.blocks[0].tx.length; i++) { // for each tx
@@ -210,20 +237,31 @@ function init_graph_data(rawdata) {
 		// judge if the person already exists // IMPORTANT: will consider merging two different points latter
 		var cand_nodelist = []; // candidate node list
 		var tmp_map = new Map();
-		if (graph.init_nodes.length > 155) // debug
-			console.log(graph.init_nodes[155]); // it works here
+		//if (graph.init_nodes.length > 155) // debug
+		//	console.log(graph.init_nodes[155]); // it works here
 		for (var j = 0; j < input_list[i].length; j++) {
 			// decide the node's index (parent-child)
 			//console.log("input i="+i+" j="+j+ "\naddr: " + input_list[i][j].prev_out.addr + "\nindex:"+ADDR_LIST.get(input_list[i][j].prev_out.addr)+"\n");
 			var tmp = ADDR_LIST.get(input_list[i][j].prev_out.addr);
-			var cand_nodelist_exist = tmp_map.get(tmp);
-			if (tmp != undefined && cand_nodelist_exist != true) {
+			var cand_nodelist_idx = tmp_map.get(tmp);
+			if (tmp != undefined && cand_nodelist_idx == undefined) {
+				tmp_map.put(tmp, cand_nodelist.length);
+				//if (tmp == 155)
+				//	console.log([tmp, cand_nodelist.length]);//debug
 				cand_nodelist.push(tmp);
-				tmp_map.put(tmp, true);
 			}
+			/*
+			if (tmp == 155) {
+				//debug
+				console.log(graph.init_nodes[155]); // it works here
+				// it was alright when 155 is inserted
+			}
+			*/
 		}
-		delete tmp_map;
+		//delete tmp_map;
 		// merge the nodes
+		//if (graph.init_nodes.length > 155) // debug
+		//	console.log(graph.init_nodes[155]); // it works here
 		if (cand_nodelist.length > 0) {
 			var tmp_idx = 0;
 			idx_input = cand_nodelist[0];
@@ -234,14 +272,20 @@ function init_graph_data(rawdata) {
 				}
 			}
 			if (tmp_idx != 0) {
+				//console.log("switching two elements in cand_nodelist: [0]"+cand_nodelist[0]+", with ["+tmp_idx+"]"+cand_nodelist[tmp_idx]);
 				var tmp_elem = cand_nodelist[0];
 				cand_nodelist[0] = cand_nodelist[tmp_idx];
 				cand_nodelist[tmp_idx] = tmp_elem;
+				tmp_map.put(cand_nodelist[0], 0);
+				tmp_map.put(cand_nodelist[tmp_idx], tmp_idx);
+				//console.log("...... Done. Now it is: [0]"+cand_nodelist[0]+", with ["+tmp_idx+"]"+cand_nodelist[tmp_idx]);
 			} // idx_input should be kept unchanged and by default it is the 0-th element
 		}
 		else{
 			idx_input = -1;
 		}
+		//if (graph.init_nodes.length > 155) // debug
+		//	console.log(graph.init_nodes[155]); // it works here
 		/*
 		console.log(cand_nodelist);
 		for (var j = 0; j < cand_nodelist.length; j++) {
@@ -267,7 +311,9 @@ function init_graph_data(rawdata) {
 		//console.log("i:"+i+"\n");
 		for (var j = 1; j < cand_nodelist.length; j++) { // for each candicate // notice: what if two candidates are the same?
 			// merge all of them onto idx_input by:
-			console.log("Merging......"+"Node"+cand_nodelist[j]+".......to: Node"+idx_input);
+			//console.log("Merging......"+"Node"+cand_nodelist[j]+".......to: Node"+idx_input);
+			//if (graph.init_nodes.length > 155) // debug
+			//	console.log(graph.init_nodes[155]); // it works here
 			// 1. passing all the children
 			//console.log("j:"+j+"\n");
 			/*
@@ -279,6 +325,15 @@ function init_graph_data(rawdata) {
 				console.log(graph.init_nodes[141]); // bug is caused by [155] == undefined
 			}
 			//*/
+			/*
+			if (graph.init_nodes.length > 155) {// debug: all works
+				console.log(graph.init_nodes[155]); // it works here
+				console.log(cand_nodelist[j]); // 200000: 149 ?! 149->141 and then comes the 155, without print?
+				// so the problem is that when it comes to 155, the length of the array is less than or equal to 155.
+				// IMPORTANT: I see: while modifying the nodes, we should update the cand_nodelist at the same time!!!
+				console.log(graph.init_nodes[cand_nodelist[j]]);
+			}
+			*/
 			for (var k = 0; k < graph.init_nodes[cand_nodelist[j]]._children.length; k++) { // for each child
 				//console.log("k:"+k+"\n");
 				ADDR_LIST.put(graph.init_nodes[cand_nodelist[j]]._children[k].addr, idx_input);
@@ -305,6 +360,9 @@ function init_graph_data(rawdata) {
 					ADDR_LIST.put(graph.init_nodes[graph.init_nodes.length-1]._children[k].addr, cand_nodelist[j]);
 				}
 			}
+			/*console.log("trying to ...... move node (idx in graph.init_nodes) "+cand_nodelist[j] + " to idx "+idx_input
+				+"\nand move idx "+(graph.init_nodes.length-1)+" to idx "+ cand_nodelist[j]);
+				*/
 			//graph.init_nodes.remove(graph.init_nodes.length - 1);
 			//graph.init_nodes.length--;
 			/*
@@ -339,21 +397,41 @@ function init_graph_data(rawdata) {
 					}
 				}
 			}
+			// 5. change the rest of cand_nodelist if influenced
+			
+			var cand_nodelist_idx;
+			/*
+			cand_nodelist_idx = tmp_map.get(cand_nodelist[j]);
+			if (cand_nodelist_idx != undefined) {
+				// cand_nodelist[j] -> idx_input
+				cand_nodelist[cand_nodelist_idx] = idx_input;
+			}
+			*/
+			cand_nodelist_idx = tmp_map.get(graph.init_nodes.length);
+			//console.log("hello "+cand_nodelist_idx +","+cand_nodelist[cand_nodelist_idx]);
+			if (cand_nodelist_idx != undefined) {
+				// graph.init_nodes.length-1 -> cand_nodelist[j]
+				cand_nodelist[cand_nodelist_idx] = cand_nodelist[j];
+			}
+
 		}
 		
 		if (idx_input == -1) { // not yet inserted
 			graph.init_nodes[cnt_node] = 
 					{"name": NickName(0, cnt_node), 
 					"addr": cnt_node,
+					"time": [],
 					"color_val": i, "times": 1, "amount": 1, "_children": []};
 			idx_input = cnt_node;
 			for (var j = 0; j < input_list[i].length; j++) {
 				// update information for each node
 				ADDR_LIST.put(input_list[i][j].prev_out.addr, cnt_node);
 				//console.log(ADDR_LIST.get(input_list[i][j].prev_out.addr));
+				graph.init_nodes[cnt_node].time.push(time_list[i]);
 				graph.init_nodes[cnt_node]._children[j] = 
 						{"name": NickName(1, input_list[i][j].prev_out.addr), 
-						"addr":input_list[i][j].prev_out.addr, 
+						"addr": input_list[i][j].prev_out.addr,
+						"time": [time_list[i]],
 						"color_val": color_val[i], "times": 1, "amount": 1, "_children": []};
 			}
 			cnt_node++;
@@ -383,9 +461,11 @@ function init_graph_data(rawdata) {
 				}
 				else {
 					ADDR_LIST.put(input_list[i][j].prev_out.addr, idx_input);
+					graph.init_nodes[idx_input].time.push(time_list[i]);
 					graph.init_nodes[idx_input]._children.push(
 							{"name": NickName(1, input_list[i][j].prev_out.addr),
-							"addr": input_list[i][j].prev_out.addr, 
+							"addr": input_list[i][j].prev_out.addr,
+							"time": [time_list[i]],
 							"color_val": color_val[i], "times": 1, "amount": 1, "_children": []});
 				}
 			}			
@@ -409,11 +489,13 @@ function init_graph_data(rawdata) {
 				// not existed yet
 				graph.init_nodes[cnt_node] = 
 						{"name": NickName(0, cnt_node),
-						"addr": cnt_node, 
+						"addr": cnt_node,
+						"time": [time_list[i]],
 						"color_val": i, "times": 1, "amount": 1, "_children": []};
 				graph.init_nodes[cnt_node]._children[0] = 
 						{"name": NickName(1, output_list[i][j].addr),
 						"addr": output_list[i][j].addr,
+						"time": [time_list[i]],
 						"color_val": color_val[i], "times": 1, "amount": 1, "_children": []};
 				ADDR_LIST.put(output_list[i][j].addr, cnt_node);
 				idx_output = cnt_node;
@@ -429,17 +511,32 @@ function init_graph_data(rawdata) {
 						break;
 					}
 				}
+				//if (idx_addr == -1) {
+					// has no such child here:: regarded as impossible
+				//}
+				graph.init_nodes[idx_output].time.push[time_list[i]];
+				graph.init_nodes[idx_output]._children[idx_addr].time.push(time_list[i]);
 				graph.init_nodes[idx_output]._children[idx_addr].times++;
 			}
 			// links
 			//console.log("linking......"+graph.init_nodes[idx_input].addr+" with "+graph.init_nodes[idx_output].addr);
-			var idx_link = -1;
-			for (var k = 0; k < cnt_link; k++) {
-				//
+			if (idx_input != idx_output) {
+				var idx_link = -1;
+				for (var k = 0; k < cnt_link; k++) {
+					// already existed
+					if (graph.init_links[k].source == idx_input && graph.init_links[k].target == idx_output) {
+						idx_link = k;
+						graph.init_links[k].value++;
+						break;
+					}
+				}
+				if (idx_link == -1) {
+					graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1};
+					cnt_link++;
+				}
 			}
-			graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output,"value": 1};
-			cnt_link++;
 		}
+		delete tmp_map;
 	}
 	/*
 	// debug
