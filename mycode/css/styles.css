@@ -30,9 +30,9 @@ stroke: #fff; /* #ccc #fff*/ /* #000 */
 stroke-width: 2px;
 }
 .node circle {
-stroke: #000;
-/* stroke-width: 1.5px; */
-stroke-width: 0;
+stroke: #666;/*stroke: #000;*/
+stroke-width: 1.5px;
+/*stroke-width: 0;*/
 }
 .node text {
 font: 10px sans-serif;

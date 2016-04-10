@@ -4,6 +4,10 @@ var G_HEIGHT1 = $(window).height();//600;
 //var width = document.getElementById("block_graph").clientWidth;
 //var height = document.getElementById("block_graph").clientHeight;
 var SIZE_UNIT = 5;
+// https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
+var COLOR_ADDR = "#e7ba52";
+var COLOR_PERSON = "#637939";
+var COLOR_PALE = "aaaaaa";
 
 // functions about block
 var RAW_DATA;
@@ -24,7 +28,7 @@ function formatDate(now) {
 function FormatDateList(array) {
 	var date_list = [];
 	for (var i = 0; i < array.length; i++) {
-		date_list[i] = formatDate(array);
+		date_list[i] = formatDate(array[i]);
 	}
 	return date_list;
 }
@@ -66,15 +70,15 @@ function mycolor(d, color, colorB){
 	var colorRGB = "#000000";
 	if (d._children && d._children.length > 0) {
 		// totally collapsed
-		colorRGB = colorB(d.color_val);
+		colorRGB = COLOR_PERSON;//colorB(d.color_val);
 	}
 	else if (d.children && d.children.length > 0) {
 		// have expanded leafs
-		colorRGB = "#aaaaaa";
+		colorRGB = COLOR_PALE;//"#aaaaaa";
 	}
 	else {
 		// leaf
-		colorRGB = color(d.color_val);
+		colorRGB = COLOR_ADDR;//color(d.color_val);
 	}
 	return colorRGB;
 }
@@ -128,7 +132,18 @@ function update() {
 			.data(graph.links)
 			.enter().append("line")
 			.attr("class", "link")
-			.style("marker-end",  "url(#suit)") // arrows
+			//.style("marker-end",  "url(#suit)") // arrows
+			//.style("marker-end",  "") // no arrows
+			.style("marker-end", function(d) {
+				var arrows;
+				if (d.type == 1) {
+					arrows = "url(#suit)";
+				}
+				else {
+					arrows = "";
+				}
+				return arrows;
+			})
 			.style("stroke-width", function(d) {
 				return Math.sqrt(d.value); 
 			});
@@ -140,7 +155,7 @@ function update() {
 				.call(force.drag);
 
 	node.append("circle")
-		.attr("r", function(d) { return SIZE_UNIT; }) // SIZE_UNIT*d.times? *d.amount?
+		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); }) // SIZE_UNIT*d.times? *d.amount?
 		.on("click", click_node)
 		.style("fill", function(d) {
 			return mycolor(d, color, colorB); //debug02
@@ -531,7 +546,7 @@ function init_graph_data(rawdata) {
 					}
 				}
 				if (idx_link == -1) {
-					graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1};
+					graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1, "type": 1};
 					cnt_link++;
 				}
 			}
@@ -565,7 +580,9 @@ function update_graph_data(graph) {
 		//console.log(graph.init_nodes[i]);
 		if (graph.init_nodes[i].children) {
 			for (var j = 0; j < graph.init_nodes[i].children.length; j++) {
-				graph.child_links[graph.child_links.length] = {"source": i, "target": graph.init_nodes.length + graph.child_nodes.length + j,"value": 1};
+				graph.child_links[graph.child_links.length] = 
+							{"source": i, "target": graph.init_nodes.length + graph.child_nodes.length + j,
+							"value": 1, "type": 0};
 			}
 			graph.child_nodes = graph.child_nodes.concat(graph.init_nodes[i].children);
 		}
