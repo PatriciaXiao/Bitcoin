@@ -112,3 +112,16 @@ test3
 http://jqueryui.com/
 http://www.w3school.com.cn/tags/tag_button.asp
 http://www.runoob.com/jqueryui/example-slider.html
+
+http://www.ibm.com/developerworks/cn/xml/x-svgclientside/index.html
+
+http://vis.pku.edu.cn/Bitcoin/ = 192.168.10.9/Bitcoin
+
+Username: zhiping.xiao
+Password: family22
+
+这个帐号对应于实验室的两套帐号系统。
+git: 其中一套可用于git, svn, openvpn等服务，服务器内网地址是192.168.40.1，外网地址是162.105.71.185。（ssh登录外网地址时需加端口号10022）
+online demo: 另一套可用于实验室集群以及web服务器，这些服务器地址是192.168.10.8-10。(I used .9)
+
+git/bitcoin.transaction.git

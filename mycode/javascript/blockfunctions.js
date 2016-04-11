@@ -6,7 +6,7 @@ var G_HEIGHT1 = $(window).height();//600;
 var SIZE_UNIT = 5;
 // https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
 var COLOR_ADDR = "#e7ba52";
-var COLOR_PERSON = "#637939";
+var COLOR_PERSON = "#8ca252";//"#637939";
 var COLOR_PALE = "aaaaaa";
 
 // functions about block
@@ -28,7 +28,7 @@ function formatDate(now) {
 function FormatDateList(array) {
 	var date_list = [];
 	for (var i = 0; i < array.length; i++) {
-		date_list[i] = formatDate(array[i]);
+		date_list[i] = "<br>" + formatDate(array[i]);
 	}
 	return date_list;
 }
@@ -44,16 +44,19 @@ function refreshBlockSwatch() {
 	var value = $("#block_slider").slider("value");
 	document.getElementById("slider_information_debug").innerHTML = "slider value: "+value;
 }
+
 $(function() {
 	$("#block_slider").slider({
       orientation: "horizontal",
       //range: "max",
-      max: 255,
+      min: 0,
+      max: 1000,
       value: 0,
       slide: refreshBlockSwatch,
       change: refreshBlockSwatch
     });
 });
+
 
 function showblock() {
 	var goal_block = block_height.value;
@@ -95,16 +98,27 @@ function update() {
 	var width = document.getElementById("block_graph").clientWidth;
 	var height = width;//document.getElementById("block_graph").clientHeight;
 	//console.log(G_WIDTH1, G_HEIGHT1, width, height);
+	/*
 	var force = d3.layout.force()
 				.charge(-120)
 				.linkDistance(30)
 				.size([width, height]);
+	*/
+	// width:500, height:600, distance(auto), linkStrength:2, charge: (-10 / k)*1.5 , gravity: 100 * k
+	// var k = Math.sqrt(nodes.length / (width * height));
+	var force = d3.layout.force()
+				.charge(-60) // -120
+				.linkDistance(30)
+				.size([width, height]);
+
 	d3.select("#block_graph_svg").remove();
 
 	var svg = d3.select("#block_graph").append("svg")
 				.attr("width", width)
 				.attr("height", height)
 				//.attr("class", "outlined")//debug
+				.attr("viewBox", "0 0 " + width + " " + height) //try
+				.attr("preserveAspectRatio", "xMidYMid meet")//try
 				.attr("id", "block_graph_svg");
 	// for arrow
 	svg.append("defs").selectAll("marker")
@@ -232,6 +246,7 @@ function init_graph_data(rawdata) {
 	var output_list = [];
 	var color_val = []; // depend on tx_index
 	var time_list = []; // time stamps
+	var time_max, time_min;
 	// the first tx
 	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
@@ -244,6 +259,20 @@ function init_graph_data(rawdata) {
 		output_list[i] = rawdata.blocks[0].tx[i].out;
 		time_list[i] = rawdata.blocks[0].tx[i].time;
 	}
+	// set the range of the slider
+	
+	time_min = time_max = time_list[0];
+	for (var i = 1; i < time_list.length; i++) {
+		if (time_list[i] > time_max) {
+			time_max = time_list[i];
+		}
+		else if (time_list[i] < time_min) {
+			time_min = time_list[i];
+		}
+	}
+	//$("#block_slider").slider("min") = time_min;
+	//$("#block_slider").slider("max") = time_max;
+	
 	// process data
 	for (var i = 0; i < rawdata.blocks[0].tx.length; i++) { // for each tx
 		var idx_input = -1;
@@ -299,56 +328,12 @@ function init_graph_data(rawdata) {
 		else{
 			idx_input = -1;
 		}
-		//if (graph.init_nodes.length > 155) // debug
-		//	console.log(graph.init_nodes[155]); // it works here
-		/*
-		console.log(cand_nodelist);
-		for (var j = 0; j < cand_nodelist.length; j++) {
-			console.log(cand_nodelist[j]);
-			console.log(graph.init_nodes[cand_nodelist[j]]);
-		}
-		*/
-		/*
-		console.log("i="+i);
-		ADDR_LIST.each(function(a,b,c){
-			console.log(a+"\n"+b+"\n"+c+"\n")
-		});*/
-
-		// judge if there are same candidates within the candidate list
-		/*
-		for (var j = 0; j < cand_nodelist.length; j++) {
-			for (var k = j + 1; k < cand_nodelist.length; k++) {
-				if (cand_nodelist[j] == cand_nodelist[k]) {
-					console.log("brilliant\n");
-				}
-			}
-		}*/
-		//console.log("i:"+i+"\n");
 		for (var j = 1; j < cand_nodelist.length; j++) { // for each candicate // notice: what if two candidates are the same?
 			// merge all of them onto idx_input by:
 			//console.log("Merging......"+"Node"+cand_nodelist[j]+".......to: Node"+idx_input);
 			//if (graph.init_nodes.length > 155) // debug
 			//	console.log(graph.init_nodes[155]); // it works here
 			// 1. passing all the children
-			//console.log("j:"+j+"\n");
-			/*
-			console.log((cand_nodelist[j]==155)+","+(idx_input==141));
-			if (cand_nodelist[j] == 155 && idx_input == 141) {
-				// debug
-				console.log("length="+graph.init_nodes.length);
-				console.log(graph.init_nodes[155]);
-				console.log(graph.init_nodes[141]); // bug is caused by [155] == undefined
-			}
-			//*/
-			/*
-			if (graph.init_nodes.length > 155) {// debug: all works
-				console.log(graph.init_nodes[155]); // it works here
-				console.log(cand_nodelist[j]); // 200000: 149 ?! 149->141 and then comes the 155, without print?
-				// so the problem is that when it comes to 155, the length of the array is less than or equal to 155.
-				// IMPORTANT: I see: while modifying the nodes, we should update the cand_nodelist at the same time!!!
-				console.log(graph.init_nodes[cand_nodelist[j]]);
-			}
-			*/
 			for (var k = 0; k < graph.init_nodes[cand_nodelist[j]]._children.length; k++) { // for each child
 				//console.log("k:"+k+"\n");
 				ADDR_LIST.put(graph.init_nodes[cand_nodelist[j]]._children[k].addr, idx_input);
@@ -456,6 +441,7 @@ function init_graph_data(rawdata) {
 			for (var j = 0; j < input_list[i].length; j++) {
 				// count++
 				graph.init_nodes[idx_input].times++;
+				graph.init_nodes[idx_input].time.push(time_list[i]); // moved here
 				// judge if the node did exist
 				var tmp = ADDR_LIST.get(input_list[i][j].prev_out.addr);
 				if (tmp == idx_input) {
@@ -469,14 +455,11 @@ function init_graph_data(rawdata) {
 							break;
 						}
 					}
-					//console.log(idx_addr+"\n"+input_list[i][j].prev_out.addr);
-					//bug:block height200000 addr:17NKcZNXqAbxWsTwB1UJHjc9mQG3yjGALA,idx=-1
-					//it must be that the addr isn't really pointing to this node
 					graph.init_nodes[idx_input]._children[idx_addr].times++;
+					graph.init_nodes[idx_input]._children[idx_addr].time.push(time_list[i]);//don't forget
 				}
 				else {
 					ADDR_LIST.put(input_list[i][j].prev_out.addr, idx_input);
-					graph.init_nodes[idx_input].time.push(time_list[i]);
 					graph.init_nodes[idx_input]._children.push(
 							{"name": NickName(1, input_list[i][j].prev_out.addr),
 							"addr": input_list[i][j].prev_out.addr,
