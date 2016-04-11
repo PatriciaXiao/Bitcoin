@@ -125,3 +125,5 @@ git: 其中一套可用于git, svn, openvpn等服务，服务器内网地址是1
 online demo: 另一套可用于实验室集群以及web服务器，这些服务器地址是192.168.10.8-10。(I used .9)
 
 git/bitcoin.transaction.git
+
+http://www.coindesk.com/api/
