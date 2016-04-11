@@ -628,28 +628,29 @@ function showblock_without_merge(rawdata) {
 	// start processing the data
 	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
 		// input list
-		for (var j = 0; j < input_list.length; j++) {
+		for (var j = 0; j < input_list[i].length; j++) {
+			console.log()
 			graph.nodes[cnt_node + j] = 
 					{"name": input_list[i][j].prev_out.addr, 
 					"addr": input_list[i][j].prev_out.addr, 
 					"time": [time_list[i]], "color_val": color_val[i]};
 		}
 		// output list
-		for (var j = 0; j < output_list.length; j++) {
-			graph.nodes[cnt_node + input_list.length + j] = 
+		for (var j = 0; j < output_list[i].length; j++) {
+			graph.nodes[cnt_node + input_list[i].length + j] = 
 					{"name": output_list[i][j].addr, 
 					"addr": output_list[i][j].addr, 
 					"time": [time_list[i]], "color_val": color_val[i]};
 		}
 		// links
-		for (var j = 0; j < input_list.length; j++) {
-			for (var k = 0; k < output_list.length; k++) {
+		for (var j = 0; j < input_list[i].length; j++) {
+			for (var k = 0; k < output_list[i].length; k++) {
 				// if haven't been recorded already
-				graph.links[cnt_link] = {"source": cnt_node + j, "target": cnt_node + input_list.length + k, "value": 1};
+				graph.links[cnt_link] = {"source": cnt_node + j, "target": cnt_node + input_list[i].length + k, "value": 1};
 				cnt_link++;
 			}
 		}
-		cnt_node += (input_list.length + output_list.length);
+		cnt_node += (input_list[i].length + output_list[i].length);
 	}
 	/////
 	// draw the force-layout graph
