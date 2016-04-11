@@ -32,7 +32,7 @@
 		<h1>Bitcoin Visualization v1.0</h1>
 		<hr></hr>
 		<div class = "ui-widget">
-			<label>Select Content:
+			<!--label>Select Content:
 				<label>
 					<input type = "radio" name = "data_content" id = "data_content" value = "block"> Block
 				</label>
@@ -40,13 +40,23 @@
 				<label>
 					<input type = "radio" name = "data_content" id = "data_content" value = "address"> Address
 				</label>
-			</label>
+			</label-->
 			<br>
 			<label>Block Height:
 				&nbsp;
 				<input type = "text" name = "block_height" id = "block_height">
 				&nbsp;
 				<input type = "button" id = "submit" name = "submit" value = "Submit" onclick = "showblock();"/>
+			</label>
+			<br>
+			<label>Select Block View:
+				<label>
+					<input type = "radio" name = "block_view_type" id = "block_view_type" value = "merge" checked = "true"> Merge
+				</label>
+				&nbsp;
+				<label>
+					<input type = "radio" name = "block_view_type" id = "block_view_type" value = "no_merge"> Without Merge
+				</label>
 			</label>
 			<hr></hr>
 			<!--input id="search">
