@@ -578,6 +578,7 @@ function update_graph_data(graph) {
 function showblock_without_merge(rawdata) {
 	// console.log("load data");
 	// basic parameters settings
+	var node_addr_list = new Map();
 	var offset = 12;
 	//var width = G_WIDTH1, height = G_HEIGHT1;
 	var width = document.getElementById("block_graph").clientWidth;
@@ -613,6 +614,9 @@ function showblock_without_merge(rawdata) {
 	var output_list = [];
 	var color_val = []; // depend on tx_index
 	var time_list = []; // time stamps
+	var idx_input = -1;
+	var idx_output = -1;
+	var idx_link = -1;
 	// the first tx
 	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
@@ -627,30 +631,57 @@ function showblock_without_merge(rawdata) {
 	}
 	// start processing the data
 	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
-		// input list
-		for (var j = 0; j < input_list[i].length; j++) {
-			console.log()
-			graph.nodes[cnt_node + j] = 
-					{"name": input_list[i][j].prev_out.addr, 
-					"addr": input_list[i][j].prev_out.addr, 
-					"time": [time_list[i]], "color_val": color_val[i]};
-		}
-		// output list
-		for (var j = 0; j < output_list[i].length; j++) {
-			graph.nodes[cnt_node + input_list[i].length + j] = 
-					{"name": output_list[i][j].addr, 
-					"addr": output_list[i][j].addr, 
-					"time": [time_list[i]], "color_val": color_val[i]};
-		}
-		// links
 		for (var j = 0; j < input_list[i].length; j++) {
 			for (var k = 0; k < output_list[i].length; k++) {
-				// if haven't been recorded already
-				graph.links[cnt_link] = {"source": cnt_node + j, "target": cnt_node + input_list[i].length + k, "value": 1};
-				cnt_link++;
+				// input list (j)
+				idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
+				if (idx_input == undefined) {
+					idx_input = cnt_node;
+					node_addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
+					graph.nodes[cnt_node] = 
+						{"name": input_list[i][j].prev_out.addr, 
+						"addr": input_list[i][j].prev_out.addr, 
+						"times": 1, "amount": 0, "time": [time_list[i]], "color_val": color_val[i]};
+					cnt_node++;
+				}
+				else {
+					// already exist
+					graph.nodes[idx_input].times++;
+					graph.nodes[idx_input].time.push(time_list[i]);
+				}
+				// output list (k)
+				idx_output = node_addr_list.get(output_list[i][k].addr);
+				if (idx_output == undefined) {
+					idx_output = cnt_node;
+					node_addr_list.put(output_list[i][k].addr, cnt_node);
+					graph.nodes[cnt_node] = 
+						{"name": output_list[i][k].addr, 
+						"addr": output_list[i][k].addr, 
+						"times": 1, "amount": 0, "time": [time_list[i]], "color_val": color_val[i]};
+					cnt_node++;
+				}
+				else {
+					graph.nodes[idx_output].times++;
+					graph.nodes[idx_output].time.push(time_list[i]);
+				}
+				// links
+				// if have been recorded
+				idx_link = -1;
+				for (var p = 0; p < cnt_link; p++) {
+					if (graph.links[p].source == idx_input && graph.links[p].target == idx_output) {
+						idx_link = p;
+						break;
+					}
+				}
+				if (idx_link == -1) {
+					graph.links[cnt_link] = {"source": idx_input, "target": idx_output, "times": 1, "value": 1};
+					cnt_link++;
+				}
+				else {
+					graph.links[idx_link].times++;
+				}
 			}
 		}
-		cnt_node += (input_list[i].length + output_list[i].length);
 	}
 	/////
 	// draw the force-layout graph
@@ -675,7 +706,8 @@ function showblock_without_merge(rawdata) {
 				.attr("class", "node")
 				.call(force.drag);
 	node.append("circle")
-		.attr("r", function(d) { return SIZE_UNIT; })
+		//.attr("r", function(d) { return SIZE_UNIT; })
+		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); })
 		.on("click", function(d) {
 			document.getElementById("node_description_addr").innerHTML = "address: "+ d.addr;
 			document.getElementById("node_description_time").innerHTML = "time: "+ FormatDateList(d.time);
@@ -702,4 +734,6 @@ function showblock_without_merge(rawdata) {
 			.attr("cy", function(d) { return d.y; });
 		node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 	}
+	// clear the address list
+	node_addr_list.clear();
 }
