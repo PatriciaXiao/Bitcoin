@@ -7,7 +7,10 @@ var SIZE_UNIT = 5;
 // https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
 var COLOR_ADDR = "#e7ba52";
 var COLOR_PERSON = "#8ca252";//"#637939";
-var COLOR_PALE = "aaaaaa";
+var COLOR_PALE = "#aaaaaa";
+
+var COLOR_HIGHLIGHT = "#d62728";
+
 
 // functions about block
 var RAW_DATA;
@@ -139,6 +142,8 @@ function update() {
 		.links(graph.links)
 		.on("tick", tick) 
 		.start();
+
+
 	// set the links
 	var link = svg.selectAll(".link")
 			.data(graph.links)
@@ -168,15 +173,16 @@ function update() {
 
 	node.append("circle")
 		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); }) // SIZE_UNIT*d.times? *d.amount?
+		.attr("id", function(d) { return d.name})
 		.on("click", click_node)
 		.style("fill", function(d) {
 			return mycolor(d, color, colorB); //debug02
 		});
 
 	node.append("title")
-			.text(function(d) {
-				return d.name;
-			});
+		.text(function(d) {
+			return d.name;
+		});
 
 	// show text when hovering over it
 	node.append("svg:text")
@@ -212,10 +218,16 @@ function click_node(d) {
 		}
 		update();
 	}
-	//alert(d.addr);// unexpected phenomenon: reshaped too much?
-	//console.log(window.document);
+	// show information
 	document.getElementById("node_description_addr").innerHTML = "address: "+d.addr;
 	document.getElementById("node_description_time").innerHTML = "time: "+FormatDateList(d.time);
+	// highlight
+	/*
+	console.log(document.getElementById(d.name));
+	document.getElementById(d.name).setAttribute("class", "HelloWorld");
+	console.log(document.getElementsByClassName("HelloWorld")[0]);
+	console.log(document.getElementById(d.name).style);
+	*/
 }
 
 function NickName(type, value) {
@@ -242,17 +254,17 @@ function init_graph_data(rawdata) {
 	// for each i
 	var input_list = [];
 	var output_list = [];
-	var color_val = []; // depend on tx_index
+	//var color_val = []; // depend on tx_index
 	var time_list = []; // time stamps
 	var time_max, time_min;
 	// the first tx
 	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
-	color_val[0] = rawdata.blocks[0].tx[0].tx_index;
+	//color_val[0] = rawdata.blocks[0].tx[0].tx_index;
 	time_list[0] = time_list[i] = rawdata.blocks[0].tx[0].time;
 	// not the first tx
 	for (var i = 1; i < rawdata.blocks[0].tx.length; i++) {
-		color_val[i] = rawdata.blocks[0].tx[i].tx_index;
+		//color_val[i] = rawdata.blocks[0].tx[i].tx_index;
 		input_list[i] = rawdata.blocks[0].tx[i].inputs;
 		output_list[i] = rawdata.blocks[0].tx[i].out;
 		time_list[i] = rawdata.blocks[0].tx[i].time;
@@ -419,7 +431,8 @@ function init_graph_data(rawdata) {
 					{"name": NickName(0, cnt_node), 
 					"addr": cnt_node,
 					"time": [],
-					"color_val": i, "times": 1, "amount": 1, "_children": []};
+					"color_val": false, //i,
+					"times": 1, "amount": 1, "_children": []};
 			idx_input = cnt_node;
 			for (var j = 0; j < input_list[i].length; j++) {
 				// update information for each node
@@ -430,7 +443,8 @@ function init_graph_data(rawdata) {
 						{"name": NickName(1, input_list[i][j].prev_out.addr), 
 						"addr": input_list[i][j].prev_out.addr,
 						"time": [time_list[i]],
-						"color_val": color_val[i], "times": 1, "amount": 1, "_children": []};
+						"color_val": false, //color_val[i], 
+						"times": 1, "amount": 1, "_children": []};
 			}
 			cnt_node++;
 		}
@@ -462,7 +476,8 @@ function init_graph_data(rawdata) {
 							{"name": NickName(1, input_list[i][j].prev_out.addr),
 							"addr": input_list[i][j].prev_out.addr,
 							"time": [time_list[i]],
-							"color_val": color_val[i], "times": 1, "amount": 1, "_children": []});
+							"color_val": false, //color_val[i], 
+							"times": 1, "amount": 1, "_children": []});
 				}
 			}			
 		}
@@ -487,12 +502,14 @@ function init_graph_data(rawdata) {
 						{"name": NickName(0, cnt_node),
 						"addr": cnt_node,
 						"time": [time_list[i]],
-						"color_val": i, "times": 1, "amount": 1, "_children": []};
+						"color_val": false, //i, 
+						"times": 1, "amount": 1, "_children": []};
 				graph.init_nodes[cnt_node]._children[0] = 
 						{"name": NickName(1, output_list[i][j].addr),
 						"addr": output_list[i][j].addr,
 						"time": [time_list[i]],
-						"color_val": color_val[i], "times": 1, "amount": 1, "_children": []};
+						"color_val": false, //color_val[i], 
+						"times": 1, "amount": 1, "_children": []};
 				ADDR_LIST.put(output_list[i][j].addr, cnt_node);
 				idx_output = cnt_node;
 				cnt_node++;
@@ -690,6 +707,44 @@ function showblock_without_merge(rawdata) {
 		.links(graph.links)
 		.on("tick", tick) // debug add
 		.start();
+
+	/// H for Highlight
+	//Toggle stores whether the highlighting is on
+	var toggle = 0;
+	//Create an array logging what is connected to what
+	var linkedByIndex = {};
+	for (i = 0; i < graph.nodes.length; i++) {
+		linkedByIndex[i + "," + i] = 1;
+	};
+	graph.links.forEach(function (d) {
+		linkedByIndex[d.source.index + "," + d.target.index] = 1;
+	});
+	//This function looks up whether a pair are neighbours
+	function neighboring(a, b) {
+		return linkedByIndex[a.index + "," + b.index];
+	}
+	function connectedNodes() {
+		if (toggle == 0) {
+			//Reduce the opacity of all but the neighbouring nodes
+			d = d3.select(this).node().__data__;
+			node.style("opacity", function (o) {
+				return neighboring(d, o) | neighboring(o, d) ? 1 : 0.1;
+			});
+			link.style("opacity", function (o) {
+				return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
+			});
+			//Reduce the op
+			toggle = 1;
+		}
+		else {
+			//Put them back to opacity=1
+			node.style("opacity", 1);
+			link.style("opacity", 1);
+			toggle = 0;
+		}
+	}
+	/// H
+	
 	// set the links
 	var link = svg.selectAll(".link")
 			.data(graph.links)
@@ -712,6 +767,9 @@ function showblock_without_merge(rawdata) {
 			document.getElementById("node_description_addr").innerHTML = "address: "+ d.addr;
 			document.getElementById("node_description_time").innerHTML = "time: "+ FormatDateList(d.time);
 		})
+		/// H for highlight
+		.on('dblclick', connectedNodes)//; //Added code 
+		/// H
 		.style("fill", function(d) { return color(d.color_val); });
 
 	node.append("title")
