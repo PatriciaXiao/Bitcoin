@@ -29,7 +29,7 @@
 	<body align = "center">
 		<h1>Bitcoin Transaction Visualization</h1>
 		<hr></hr>
-		<div class = "ui-widget">
+		<!--div class = "ui-widget">
 			<label>Block Height:
 				&nbsp;
 				<input type = "text" name = "block_height" id = "block_height">
@@ -47,7 +47,7 @@
 				</label>
 			</label>
 			<hr></hr>
-		</div>
+		</div-->
 		<!--div class="container" align = "center"-->
 			<div class="row">
 				<div class ="col-md-8">
@@ -63,6 +63,26 @@
 								</h3>
 							</div>
 							<div class="panel-body" id="node_description" align="left"> 
+
+			<label>Block Height:
+				<br>
+				<input type = "text" name = "block_height" id = "block_height">
+				&nbsp;
+				<input type = "button" id = "submit" name = "submit" value = "Submit" onclick = "showblock();"/>
+			</label>
+			<br><br>
+			<label>Select Block View:
+				<br>
+				<label>
+					<input type = "radio" name = "block_view_type" id = "block_view_type" value = "merge" checked = "true"> Merge
+				</label>
+				&nbsp;
+				<label>
+					<input type = "radio" name = "block_view_type" id = "block_view_type" value = "no_merge"> Without Merge
+				</label>
+			</label>
+			<hr></hr>
+
 								<p id = "node_description_addr">
 									address: unselected
 								</p>
@@ -74,6 +94,10 @@
 								<p id = "slider_information_debug">
 									slider value: 0
 								</p-->
+								<hr></hr>
+								<p id = "node_description_value">
+									value: undefined
+								</p>
 							</div>
 							<div class="panel-footer">
 								Detailed Information

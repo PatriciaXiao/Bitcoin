@@ -6,11 +6,11 @@ function block_no_merge_color(color_val, color_funct) {
 function showblock_without_merge(rawdata) {
 	// basic parameters settings
 	var node_addr_list = new Map();
-	var offset = 12;
 	var color = d3.scale.category20();
 	//var width = G_WIDTH1, height = G_HEIGHT1;
 	var width = document.getElementById("block_graph").clientWidth;
 	var height = width;
+	var offset = width / 2;
 	//var no_merge_color = d3.scale.category20();
 	var force = d3.layout.force()
 				.charge(-60) // -120
@@ -47,7 +47,7 @@ function showblock_without_merge(rawdata) {
 	var idx_output = -1;
 	var idx_link = -1;
 	// the first tx
-	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}}];
+	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[0].tx[0].out[0].value}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
 	color_val[0] = rawdata.blocks[0].tx[0].tx_index;
 	time_list[0] = time_list[i] = rawdata.blocks[0].tx[0].time;
@@ -60,54 +60,72 @@ function showblock_without_merge(rawdata) {
 	}
 	// start processing the data
 	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
+		// for each transaction
 		for (var j = 0; j < input_list[i].length; j++) {
+			// input list (j)
+			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
+			if (idx_input == undefined) {
+				idx_input = cnt_node;
+				node_addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
+				graph.nodes[cnt_node] = 
+					{"name": input_list[i][j].prev_out.addr, 
+					"addr": input_list[i][j].prev_out.addr, 
+					"times": 1,
+					"amount": [input_list[i][j].prev_out.value], 
+					"time": [time_list[i]], "status": [1], "color_val": color_val[i]};
+				cnt_node++;
+			}
+			else {
+				// already exist
+				graph.nodes[idx_input].times++;
+				graph.nodes[idx_input].time.push(time_list[i]);
+				graph.nodes[idx_input].status.push(1);
+				graph.nodes[idx_input].amount.push(input_list[i][j].prev_out.value);
+			}
+		}
+		for (var j = 0; j < output_list[i].length; j++) {
+			// output list (j)
+			idx_output = node_addr_list.get(output_list[i][j].addr);
+			if (idx_output == undefined) {
+				idx_output = cnt_node;
+				node_addr_list.put(output_list[i][j].addr, cnt_node);
+				graph.nodes[cnt_node] = 
+					{"name": output_list[i][j].addr, 
+					"addr": output_list[i][j].addr, 
+					"times": 1, 
+					"amount": [output_list[i][j].value],
+					"time": [time_list[i]], "status": [0], "color_val": color_val[i]};
+				cnt_node++;
+			}
+			else {
+				graph.nodes[idx_output].times++;
+				graph.nodes[idx_output].time.push(time_list[i]);
+				graph.nodes[idx_output].status.push(0);
+				graph.nodes[idx_output].amount.push(output_list[i][j].value);
+			}
+		}
+		// links (j->k)
+		for (var j = 0; j < input_list[i].length; j++) {
+			// input list (j)
+			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
 			for (var k = 0; k < output_list[i].length; k++) {
-				// input list (j)
-				idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
-				if (idx_input == undefined) {
-					idx_input = cnt_node;
-					node_addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
-					graph.nodes[cnt_node] = 
-						{"name": input_list[i][j].prev_out.addr, 
-						"addr": input_list[i][j].prev_out.addr, 
-						"times": 1, "amount": 0, "time": [time_list[i]], "color_val": color_val[i]};
-					cnt_node++;
-				}
-				else {
-					// already exist
-					graph.nodes[idx_input].times++;
-					graph.nodes[idx_input].time.push(time_list[i]);
-				}
 				// output list (k)
 				idx_output = node_addr_list.get(output_list[i][k].addr);
-				if (idx_output == undefined) {
-					idx_output = cnt_node;
-					node_addr_list.put(output_list[i][k].addr, cnt_node);
-					graph.nodes[cnt_node] = 
-						{"name": output_list[i][k].addr, 
-						"addr": output_list[i][k].addr, 
-						"times": 1, "amount": 0, "time": [time_list[i]], "color_val": color_val[i]};
-					cnt_node++;
-				}
-				else {
-					graph.nodes[idx_output].times++;
-					graph.nodes[idx_output].time.push(time_list[i]);
-				}
-				// links
-				// if have been recorded
-				idx_link = -1;
-				for (var p = 0; p < cnt_link; p++) {
-					if (graph.links[p].source == idx_input && graph.links[p].target == idx_output) {
-						idx_link = p;
-						break;
+				if (idx_input != idx_output) { // if the input and output links aren't the same
+					idx_link = -1;
+					for (var p = 0; p < cnt_link; p++) {
+						if (graph.links[p].source == idx_input && graph.links[p].target == idx_output) {
+							idx_link = p;
+							break;
+						}
 					}
-				}
-				if (idx_link == -1) {
-					graph.links[cnt_link] = {"source": idx_input, "target": idx_output, "times": 1, "value": 1};
-					cnt_link++;
-				}
-				else {
-					graph.links[idx_link].times++;
+					if (idx_link == -1) {
+						graph.links[cnt_link] = {"source": idx_input, "target": idx_output, "times": 1, "value": 1};
+						cnt_link++;
+					}
+					else { // if have been recorded
+						graph.links[idx_link].times++;
+					}
 				}
 			}
 		}
@@ -209,7 +227,8 @@ function showblock_without_merge(rawdata) {
 		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); })
 		.on("click", function(d) {
 			document.getElementById("node_description_addr").innerHTML = "address: "+ d.addr;
-			document.getElementById("node_description_time").innerHTML = "time: "+ FormatDateList(d.time);
+			document.getElementById("node_description_time").innerHTML = "time: "+ PrintDateList(d.time, d.status);
+			document.getElementById("node_description_value").innerHTML = "value: "+PrintValueList(d.time, d.amount);
 		})
 		/// H for highlight
 		.on('dblclick', connectedNodes)//; //Added code 

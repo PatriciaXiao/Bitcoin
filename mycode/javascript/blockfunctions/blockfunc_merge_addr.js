@@ -21,9 +21,9 @@ function update() {
 	var color = d3.scale.category20();
 	var colorB = d3.scale.category20b();
 	// basic parameters settings
-	var offset = 12;
 	var width = document.getElementById("block_graph").clientWidth;
 	var height = width;//document.getElementById("block_graph").clientHeight;
+	var offset = width / 2;
 	// width:500, height:600, distance(auto), linkStrength:2, charge: (-10 / k)*1.5 , gravity: 100 * k
 	// var k = Math.sqrt(nodes.length / (width * height));
 	var force = d3.layout.force()
@@ -139,7 +139,8 @@ function click_node(d) {
 	}
 	// show information
 	document.getElementById("node_description_addr").innerHTML = "address: "+d.addr;
-	document.getElementById("node_description_time").innerHTML = "time: "+FormatDateList(d.time);
+	document.getElementById("node_description_time").innerHTML = "time: "+PrintDateList(d.time, d.status);
+	document.getElementById("node_description_value").innerHTML = "value: "+PrintValueList(d.time, d.amount);
 	// highlight
 	/*
 	console.log(document.getElementById(d.name));
@@ -177,7 +178,7 @@ function init_graph_data(rawdata) {
 	var time_list = []; // time stamps
 	var time_max, time_min;
 	// the first tx
-	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000"}}];
+	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[0].tx[0].out[0].value}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
 	//color_val[0] = rawdata.blocks[0].tx[0].tx_index;
 	time_list[0] = time_list[i] = rawdata.blocks[0].tx[0].time;
@@ -349,21 +350,25 @@ function init_graph_data(rawdata) {
 			graph.init_nodes[cnt_node] = 
 					{"name": NickName(0, cnt_node), 
 					"addr": cnt_node,
-					"time": [],
+					"time": [], "status": [],
 					"color_val": false, //i,
-					"times": 1, "amount": 1, "_children": []};
+					"times": 1, "amount": [], 
+					"_children": []};
 			idx_input = cnt_node;
 			for (var j = 0; j < input_list[i].length; j++) {
 				// update information for each node
 				ADDR_LIST.put(input_list[i][j].prev_out.addr, cnt_node);
 				//console.log(ADDR_LIST.get(input_list[i][j].prev_out.addr));
 				graph.init_nodes[cnt_node].time.push(time_list[i]);
+				graph.init_nodes[cnt_node].status.push(1); // input
+				graph.init_nodes[cnt_node].amount.push(input_list[i][j].prev_out.value);
 				graph.init_nodes[cnt_node]._children[j] = 
 						{"name": NickName(1, input_list[i][j].prev_out.addr), 
 						"addr": input_list[i][j].prev_out.addr,
-						"time": [time_list[i]],
+						"time": [time_list[i]], "status": [1],
 						"color_val": false, //color_val[i], 
-						"times": 1, "amount": 1, "_children": []};
+						"times": 1, "amount": [input_list[i][j].prev_out.value], 
+						"_children": []};
 			}
 			cnt_node++;
 		}
@@ -373,6 +378,8 @@ function init_graph_data(rawdata) {
 				// count++
 				graph.init_nodes[idx_input].times++;
 				graph.init_nodes[idx_input].time.push(time_list[i]); // moved here
+				graph.init_nodes[idx_input].status.push(1);
+				graph.init_nodes[idx_input].amount.push(input_list[i][j].prev_out.value);
 				// judge if the node did exist
 				var tmp = ADDR_LIST.get(input_list[i][j].prev_out.addr);
 				if (tmp == idx_input) {
@@ -388,15 +395,18 @@ function init_graph_data(rawdata) {
 					}
 					graph.init_nodes[idx_input]._children[idx_addr].times++;
 					graph.init_nodes[idx_input]._children[idx_addr].time.push(time_list[i]);//don't forget
+					graph.init_nodes[idx_input]._children[idx_addr].status.push(1);
+					graph.init_nodes[idx_input]._children[idx_addr].amount.push(input_list[i][j].prev_out.value);
 				}
 				else {
 					ADDR_LIST.put(input_list[i][j].prev_out.addr, idx_input);
 					graph.init_nodes[idx_input]._children.push(
 							{"name": NickName(1, input_list[i][j].prev_out.addr),
 							"addr": input_list[i][j].prev_out.addr,
-							"time": [time_list[i]],
+							"time": [time_list[i]], "status": [1],
 							"color_val": false, //color_val[i], 
-							"times": 1, "amount": 1, "_children": []});
+							"times": 1, "amount": [input_list[i][j].prev_out.value], 
+							"_children": []});
 				}
 			}			
 		}
@@ -420,15 +430,17 @@ function init_graph_data(rawdata) {
 				graph.init_nodes[cnt_node] = 
 						{"name": NickName(0, cnt_node),
 						"addr": cnt_node,
-						"time": [time_list[i]],
+						"time": [time_list[i]], "status": [0],
 						"color_val": false, //i, 
-						"times": 1, "amount": 1, "_children": []};
+						"times": 1, "amount": [output_list[i][j].value], 
+						"_children": []};
 				graph.init_nodes[cnt_node]._children[0] = 
 						{"name": NickName(1, output_list[i][j].addr),
 						"addr": output_list[i][j].addr,
-						"time": [time_list[i]],
+						"time": [time_list[i]], "status": [0],
 						"color_val": false, //color_val[i], 
-						"times": 1, "amount": 1, "_children": []};
+						"times": 1, "amount": [output_list[i][j].value], 
+						"_children": []};
 				ADDR_LIST.put(output_list[i][j].addr, cnt_node);
 				idx_output = cnt_node;
 				cnt_node++;
@@ -447,7 +459,11 @@ function init_graph_data(rawdata) {
 					// has no such child here:: regarded as impossible
 				//}
 				graph.init_nodes[idx_output].time.push[time_list[i]];
+				graph.init_nodes[idx_output].status.push(0); // output
+				graph.init_nodes[idx_output].amount.push(output_list[i][j].value);
 				graph.init_nodes[idx_output]._children[idx_addr].time.push(time_list[i]);
+				graph.init_nodes[idx_output]._children[idx_addr].status.push(0);//output
+				graph.init_nodes[idx_output]._children[idx_addr].amount.push(output_list[i][j].value);
 				graph.init_nodes[idx_output]._children[idx_addr].times++;
 			}
 			// links

@@ -5,6 +5,7 @@ var G_HEIGHT1 = $(window).height();//600;
 //var width = document.getElementById("block_graph").clientWidth;
 //var height = document.getElementById("block_graph").clientHeight;
 var SIZE_UNIT = 5;
+var AMOUNT_UNIT = 1000000;
 // https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
 var COLOR_ADDR = "#e7ba52";
 var COLOR_PERSON = "#8ca252";//"#637939";
@@ -43,9 +44,32 @@ function formatDate(now) {
 function FormatDateList(array) {
 	var date_list = [];
 	for (var i = 0; i < array.length; i++) {
-		date_list[i] = "<br>" + formatDate(array[i]);
+		date_list[i] = formatDate(array[i]);
 	}
 	return date_list;
+}
+function PrintDateList(array, iomark) {
+	var print_list = [];
+	var date_list = FormatDateList(array);
+	for (var i = 0; i < array.length; i++) {
+		var iostatus;
+		switch(iomark[i]) {
+			case 0: iostatus = "input"; break; // in the output list
+			case 1: iostatus = "output"; break; // in the input list
+			default: iostatus = "unknown"; break;
+		}
+		print_list[i] = "<br>" + iostatus + " at: " + formatDate(array[i]);
+	}	
+	return print_list;
+}
+
+function PrintValueList(time, amount) {
+	var date_list = FormatDateList(time);
+	var print_list = [];
+	for (var i = 0; i < time.length; i++) {
+		print_list[i] = "<br>" + "transact " + amount[i] / AMOUNT_UNIT + " at: " + date_list[i];
+	}
+	return print_list;
 }
 
 function showblock() {
