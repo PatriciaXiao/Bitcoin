@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">	
+		<title>Bitcoin Demo V1.0</title>
+		<link rel="stylesheet"
+			  href="css/bootstrap.css"
+			/>
+		<link rel="stylesheet"
+			  href="css/styles.css"
+			/>
+		<link rel="stylesheet"
+			  href="css/jquery-ui.css"
+			/>
+		<!--link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"-->
+		<link rel="shortcut icon" href="image/favicon.ico" />
+		<script type="text/javascript" src = "./javascript/jquery-2.2.1.js"></script>
+		<!--script type="text/javascript" src = "./javascript/jquery-ui.min.js"> </script-->
+		<script type="text/javascript" src = "./javascript/jquery-ui.js"> </script>
+		<script type="text/javascript" src = "./javascript/d3.js"></script>
+		<!--script type="text/javascript" src = "./javascript/d3.min.js"></script-->
+		<!--script type="text/javascript" src = "./javascript/fisheye.js"></script-->
+
+		<script type="text/javascript" src = "javascript/mymap.js"></script>
+
+
+		<script type="text/javascript" src = "javascript/blockfunctions.js"></script>
+
+
+	</head>
+	<body align = "center">
+		<h1>Bitcoin Visualization v1.0</h1>
+		<hr></hr>
+		<div class = "ui-widget">
+			<!--label>Select Content:
+				<label>
+					<input type = "radio" name = "data_content" id = "data_content" value = "block"> Block
+				</label>
+				&nbsp;
+				<label>
+					<input type = "radio" name = "data_content" id = "data_content" value = "address"> Address
+				</label>
+			</label-->
+			<br>
+			<label>Block Height:
+				&nbsp;
+				<input type = "text" name = "block_height" id = "block_height">
+				&nbsp;
+				<input type = "button" id = "submit" name = "submit" value = "Submit" onclick = "showblock();"/>
+			</label>
+			<br>
+			<label>Select Block View:
+				<label>
+					<input type = "radio" name = "block_view_type" id = "block_view_type" value = "merge" checked = "true"> Merge
+				</label>
+				&nbsp;
+				<label>
+					<input type = "radio" name = "block_view_type" id = "block_view_type" value = "no_merge"> Without Merge
+				</label>
+			</label>
+			<hr></hr>
+			<!--input id="search">
+			<button type = "button" onclick = "searchNode();"> Search </button-->
+		</div>
+		<div class="container" align = "center">
+			<div class="row">
+				<div class ="col-md-8">
+					<div id = "block_graph">
+					</div>
+				</div>
+				<div class = "col-md-4">
+					<div id = "detail_info">
+						<!--iframe sandbox="allow-scripts allow-forms allow-same-origin" src="helloworld.html" marginwidth="0" marginheight="0" style="height:600px;" scrolling="no"></iframe-->
+						
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<h3 class="panel-title">
+									Detailed Information
+								</h3>
+							</div>
+							<!--div class="panel-body">
+								Panel content
+							</div>
+							<div class="panel-body">
+								Panel content2
+							</div>
+							<div class="panel-body">
+								Panel content2
+							</div-->
+							<div class="panel-body" id="node_description" align="left"> 
+								<p id = "node_description_addr">
+									address: unselected
+								</p>
+								<hr></hr>
+								<p id = "node_description_time">
+									time: undefined
+								</p>
+								<hr></hr>
+								<p id = "slider_information_debug">
+									slider value: 0
+								</p>
+							</div>
+							<div class="panel-footer">
+								Detailed Information
+							</div>
+						</div>
+						
+						<!-- normal version-->
+						<!--h3>
+							Detailed Information
+						</h3>
+						<p id = "node_description_addr">
+							address: unselected
+						</p>
+						<p>
+							<a class="btn" href="#">View details »</a>
+						</p-->
+
+
+					</div>
+				</div>
+			</div>
+			<hr></hr>
+			<div class = "row">
+				<div class = "col-md-12" >
+					<div id="block_slider"></div>
+				</div>
+			</div>
+		</div>
+		<hr></hr>
+	</body>
+</html>

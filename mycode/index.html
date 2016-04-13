@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">	
-		<title>Bitcoin Demo V1.0</title>
+		<title>Bitcoin Demo V1.1</title>
 		<link rel="stylesheet"
 			  href="css/bootstrap.css"
 			/>
@@ -14,34 +14,22 @@
 			/>
 		<!--link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"-->
 		<link rel="shortcut icon" href="image/favicon.ico" />
-		<script type="text/javascript" src = "./javascript/jquery-2.2.1.js"></script>
-		<!--script type="text/javascript" src = "./javascript/jquery-ui.min.js"> </script-->
-		<script type="text/javascript" src = "./javascript/jquery-ui.js"> </script>
-		<script type="text/javascript" src = "./javascript/d3.js"></script>
-		<!--script type="text/javascript" src = "./javascript/d3.min.js"></script-->
-		<!--script type="text/javascript" src = "./javascript/fisheye.js"></script-->
+		<script type="text/javascript" src = "./javascript/lib/jquery-2.2.1.js"></script>
+		<script type="text/javascript" src = "./javascript/lib/jquery-ui.js"> </script>
+		<script type="text/javascript" src = "./javascript/lib/d3.js"></script>
 
-		<script type="text/javascript" src = "javascript/mymap.js"></script>
+		<script type="text/javascript" src = "javascript/lib/stl_map.js"></script>
 
-
-		<script type="text/javascript" src = "javascript/blockfunctions.js"></script>
+		<script type="text/javascript" src = "javascript/blockfunctions/block_global.js"></script>
+		<script type="text/javascript" src = "javascript/blockfunctions/blockfunc_merge_addr.js"></script>
+		<script type="text/javascript" src = "javascript/blockfunctions/blockfunc_no_merge_addr.js"></script>
 
 
 	</head>
 	<body align = "center">
-		<h1>Bitcoin Visualization v1.0</h1>
+		<h1>Bitcoin Transaction Visualization</h1>
 		<hr></hr>
 		<div class = "ui-widget">
-			<!--label>Select Content:
-				<label>
-					<input type = "radio" name = "data_content" id = "data_content" value = "block"> Block
-				</label>
-				&nbsp;
-				<label>
-					<input type = "radio" name = "data_content" id = "data_content" value = "address"> Address
-				</label>
-			</label-->
-			<br>
 			<label>Block Height:
 				&nbsp;
 				<input type = "text" name = "block_height" id = "block_height">
@@ -59,34 +47,21 @@
 				</label>
 			</label>
 			<hr></hr>
-			<!--input id="search">
-			<button type = "button" onclick = "searchNode();"> Search </button-->
 		</div>
-		<div class="container" align = "center">
+		<!--div class="container" align = "center"-->
 			<div class="row">
 				<div class ="col-md-8">
 					<div id = "block_graph">
 					</div>
 				</div>
 				<div class = "col-md-4">
-					<div id = "detail_info">
-						<!--iframe sandbox="allow-scripts allow-forms allow-same-origin" src="helloworld.html" marginwidth="0" marginheight="0" style="height:600px;" scrolling="no"></iframe-->
-						
+					<div id = "detail_info">						
 						<div class="panel panel-default">
 							<div class="panel-heading">
 								<h3 class="panel-title">
 									Detailed Information
 								</h3>
 							</div>
-							<!--div class="panel-body">
-								Panel content
-							</div>
-							<div class="panel-body">
-								Panel content2
-							</div>
-							<div class="panel-body">
-								Panel content2
-							</div-->
 							<div class="panel-body" id="node_description" align="left"> 
 								<p id = "node_description_addr">
 									address: unselected
@@ -95,28 +70,15 @@
 								<p id = "node_description_time">
 									time: undefined
 								</p>
-								<hr></hr>
+								<!--hr></hr>
 								<p id = "slider_information_debug">
 									slider value: 0
-								</p>
+								</p-->
 							</div>
 							<div class="panel-footer">
 								Detailed Information
 							</div>
 						</div>
-						
-						<!-- normal version-->
-						<!--h3>
-							Detailed Information
-						</h3>
-						<p id = "node_description_addr">
-							address: unselected
-						</p>
-						<p>
-							<a class="btn" href="#">View details »</a>
-						</p-->
-
-
 					</div>
 				</div>
 			</div>
@@ -126,7 +88,7 @@
 					<div id="block_slider"></div>
 				</div>
 			</div>
-		</div>
+		<!--/div-->
 		<hr></hr>
 	</body>
 </html>

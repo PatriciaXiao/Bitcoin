@@ -124,6 +124,8 @@ Password: family22
 git: 其中一套可用于git, svn, openvpn等服务，服务器内网地址是192.168.40.1，外网地址是162.105.71.185。（ssh登录外网地址时需加端口号10022）
 online demo: 另一套可用于实验室集群以及web服务器，这些服务器地址是192.168.10.8-10。(I used .9)
 
-git/bitcoin.transaction.git
+192.168.40.1 git/bitcoin.transaction.git
+
+192.168.10.9 /var/www/html/Bitcoin/javascript
 
 http://www.coindesk.com/api/
