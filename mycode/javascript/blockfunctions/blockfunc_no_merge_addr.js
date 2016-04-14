@@ -1,6 +1,13 @@
 // without merge
-function block_no_merge_color(color_val, color_funct) {
-	return COLOR_ADDR;
+function block_no_merge_color(d, color_funct) {
+	var color_val = "#000000";
+	if (d.type == 1) {
+		color_val = COLOR_ADDR;
+	}
+	else if (d.type == 0) {
+		color_val = COLOR_PALE;
+	}
+	return color_val;
 }
 
 function showblock_without_merge(rawdata) {
@@ -20,7 +27,9 @@ function showblock_without_merge(rawdata) {
 	var svg = d3.select("#block_graph").append("svg")
 				.attr("width", width)
 				.attr("height", height)
-				.attr("id", "block_graph_svg");
+				.attr("id", "block_graph_svg") //;
+				.attr("viewBox", "0 0 " + width + " " + height)
+				.attr("preserveAspectRatio", "xMidYMid meet");
 	/// A for arrows
 	svg.append("defs").selectAll("marker")
 				.data(["suit", "licensing", "resolved"])
@@ -46,6 +55,9 @@ function showblock_without_merge(rawdata) {
 	var idx_input = -1;
 	var idx_output = -1;
 	var idx_link = -1;
+	var sum_in = 0;
+	var sum_out = 0;
+	var idx_trans = -1;
 	// the first tx
 	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[0].tx[0].out[0].value}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
@@ -60,9 +72,11 @@ function showblock_without_merge(rawdata) {
 	}
 	// start processing the data
 	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
+		sum_in = sum_out = 0;
 		// for each transaction
 		for (var j = 0; j < input_list[i].length; j++) {
 			// input list (j)
+			sum_in += input_list[i][j].prev_out.value;
 			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
 			if (idx_input == undefined) {
 				idx_input = cnt_node;
@@ -72,7 +86,9 @@ function showblock_without_merge(rawdata) {
 					"addr": input_list[i][j].prev_out.addr, 
 					"times": 1,
 					"amount": [input_list[i][j].prev_out.value], 
-					"time": [time_list[i]], "status": [1], "color_val": color_val[i]};
+					"time": [time_list[i]], "status": [1], "color_val": color_val[i],
+					"type": true // address
+				};
 				cnt_node++;
 			}
 			else {
@@ -85,6 +101,7 @@ function showblock_without_merge(rawdata) {
 		}
 		for (var j = 0; j < output_list[i].length; j++) {
 			// output list (j)
+			sum_out += output_list[i][j].value;
 			idx_output = node_addr_list.get(output_list[i][j].addr);
 			if (idx_output == undefined) {
 				idx_output = cnt_node;
@@ -94,7 +111,9 @@ function showblock_without_merge(rawdata) {
 					"addr": output_list[i][j].addr, 
 					"times": 1, 
 					"amount": [output_list[i][j].value],
-					"time": [time_list[i]], "status": [0], "color_val": color_val[i]};
+					"time": [time_list[i]], "status": [0], "color_val": color_val[i],
+					"type": true // address
+				};
 				cnt_node++;
 			}
 			else {
@@ -104,6 +123,7 @@ function showblock_without_merge(rawdata) {
 				graph.nodes[idx_output].amount.push(output_list[i][j].value);
 			}
 		}
+		/*
 		// links (j->k)
 		for (var j = 0; j < input_list[i].length; j++) {
 			// input list (j)
@@ -128,6 +148,31 @@ function showblock_without_merge(rawdata) {
 					}
 				}
 			}
+		}
+		*/
+		// newer version
+		graph.nodes[cnt_node] = 
+			{"name": "transaction "+i, 
+			"addr": i,
+			"times": 1, 
+			"amount": [sum_in, sum_out], // sum_in? sum_out?
+			"time": [time_list[i], time_list[i]], "status": [0, 1], "color_val": color_val[i],
+			"type": false // fake address, transaction
+		};
+		idx_trans = cnt_node;
+		cnt_node++;
+		// links
+		for (var j = 0; j < input_list[i].length; j++) {
+			// input list (j)
+			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
+			graph.links[cnt_link] = {"source": idx_input, "target": idx_trans, "times": 1, "value": 1};
+			cnt_link++;
+		}
+		for (var j = 0; j < output_list[i].length; j++) {
+			// output list (k)
+			idx_output = node_addr_list.get(output_list[i][j].addr);
+			graph.links[cnt_link] = {"source": idx_trans, "target": idx_output, "times": 1, "value": 1};
+			cnt_link++;
 		}
 	}
 	/////
@@ -202,7 +247,7 @@ function showblock_without_merge(rawdata) {
 			link.style("opacity", 1);
 			toggle = 0;
 		}
-	}
+	} 
 	/// H
 
 	// set the links
@@ -226,14 +271,12 @@ function showblock_without_merge(rawdata) {
 		//.attr("r", function(d) { return SIZE_UNIT; })
 		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); })
 		.on("click", function(d) {
-			document.getElementById("node_description_addr").innerHTML = "address: "+ d.addr;
-			document.getElementById("node_description_time").innerHTML = "time: "+ PrintDateList(d.time, d.status);
-			document.getElementById("node_description_value").innerHTML = "value: "+PrintValueList(d.time, d.amount);
+			ShowNodeInfo(d);
 		})
 		/// H for highlight
 		.on('dblclick', connectedNodes)//; //Added code 
 		/// H
-		.style("fill", function(d) { return block_no_merge_color(d.color_val, color); });
+		.style("fill", function(d) { return block_no_merge_color(d, color); });
 
 	node.append("title")
 			.text(function(d) { return d.name; });
