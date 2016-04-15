@@ -15,9 +15,10 @@ function block_merge_color(d, color, colorB){
 	return colorRGB;
 }
 
-function update() {
-	var rawdata = RAW_DATA;
-	var graph = update_graph_data(GRAPH_DAT);
+function update(graph) {
+	//var rawdata = RAW_DATA;
+	//var graph = update_graph_data(GRAPH_DAT);
+	graph = update_graph_data(graph);
 	var color = d3.scale.category20();
 	var colorB = d3.scale.category20b();
 	// basic parameters settings
@@ -93,7 +94,9 @@ function update() {
 	node.append("circle")
 		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); }) // SIZE_UNIT*d.times? *d.amount?
 		.attr("id", function(d) { return d.name})
-		.on("click", click_node)
+		.on("click", function(d) {
+			click_node(d, graph);
+		})
 		.style("fill", function(d) {
 			return block_merge_color(d, color, colorB); //debug02
 		});
@@ -124,7 +127,7 @@ function update() {
 }
 
 // Toggle children on click.
-function click_node(d) {
+function click_node(d, graph) {
 	// change color
 	if (!d3.event.defaultPrevented) {
 		if (d.children) {
@@ -135,7 +138,7 @@ function click_node(d) {
 			d.children = d._children;
 			d._children = null;
 		}
-		update();
+		update(graph);
 	}
 	// show information
 	ShowNodeInfo(d);
@@ -152,19 +155,19 @@ function NickName(type, value) {
 	var name;
 	switch(type) {
 		case 0: // var = number
-			name = "Node" + value;
+			name = "node" + value;
 			break;
 		case 1: // value = address
 			name = "addr: " + value;
 			break;
 		default:
-			name = "EMANON";
+			name = value;
 			break;
 	}
 	return name;
 }
 
-function init_graph_data(rawdata) {
+function init_graph_data(rawdata, ADDR_LIST) {
 	var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": [], "child_nodes": [], "child_links": []};
 	ADDR_LIST.clear(); // important
 	// general count

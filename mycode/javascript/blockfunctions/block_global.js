@@ -10,6 +10,7 @@ var AMOUNT_UNIT = 1000000;
 var COLOR_ADDR = "#e7ba52";
 var COLOR_PERSON = "#8ca252";//"#637939";
 var COLOR_PALE = "#aaaaaa";
+var COLOR_VIRTUAL = "#fdae6b"; // virtual nodes (stand for transaction)
 
 var COLOR_HIGHLIGHT = "#d62728";
 
@@ -29,9 +30,9 @@ document.head.appendChild(new_element);
 */
 
 // functions about block
-var RAW_DATA;
-var GRAPH_DAT;
-var ADDR_LIST = new Map(); // function included in mymap.js
+//var RAW_DATA;
+//var GRAPH_DAT;
+//var ADDR_LIST = new Map(); // function included in mymap.js
 
 
 /* functions */
@@ -105,21 +106,28 @@ function PrintValueList(time, amount) {
 	return print_list;
 }
 
+// the entrance of drawing the block
 function showblock() {
 	var goal_block = block_height.value;
 	var goal_file = FILE_DIR + goal_block + ".json";
 	var block_view = $("input[name='block_view_type']:checked").val();
+	var graph;
+	var ADDR_LIST = new Map();
 	d3.json(goal_file, function(error, rawdata) {
 		if (error) throw error;
 		ShowBlockInfo(rawdata);
 		if(block_view == "merge") {
-			RAW_DATA = rawdata;
-			GRAPH_DAT = init_graph_data(rawdata);
-			update();			
+			//RAW_DATA = rawdata;
+			//GRAPH_DAT = init_graph_data(rawdata);
+			graph = init_graph_data(rawdata, ADDR_LIST);
+			update(graph);			
 		}
 		else {
 			// no_merge
-			showblock_without_merge(rawdata);
+			//graph = showblock_without_merge(rawdata);
+			graph = init_graph_data_without_merge(rawdata);
+			update_without_merge(graph);
+			//update(graph);
 		}
 	});
 }

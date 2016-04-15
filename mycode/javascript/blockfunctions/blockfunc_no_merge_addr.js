@@ -10,9 +10,10 @@ function block_no_merge_color(d, color_funct) {
 	return color_val;
 }
 
-function showblock_without_merge(rawdata) {
+//function showblock_without_merge(graph) {
+function update_without_merge(graph) {
+	//var graph = init_graph_data_without_merge(rawdata);
 	// basic parameters settings
-	var node_addr_list = new Map();
 	var color = d3.scale.category20();
 	//var width = G_WIDTH1, height = G_HEIGHT1;
 	var width = document.getElementById("block_graph").clientWidth;
@@ -46,7 +47,136 @@ function showblock_without_merge(rawdata) {
 				.style("stroke", "#4679BD")
 				.style("opacity", "0.6");
 	/// A
+	// draw the force-layout graph
+	force
+		.nodes(graph.nodes)
+		.links(graph.links)
+		.on("tick", tick) // debug add
+		.start();
+	/*
+	/// C for collision detection
+	var padding = 1, // separation between circles
+		radius=8;
+	function collide(alpha) {
+		var quadtree = d3.geom.quadtree(graph.nodes);
+		return function(d) {
+			var rb = 2*radius + padding,
+			nx1 = d.x - rb,
+			nx2 = d.x + rb,
+			ny1 = d.y - rb,
+			ny2 = d.y + rb;
+			quadtree.visit(function(quad, x1, y1, x2, y2) {
+				if (quad.point && (quad.point !== d)) {
+					var x = d.x - quad.point.x,
+					y = d.y - quad.point.y,
+					l = Math.sqrt(x * x + y * y);
+					if (l < rb) {
+						l = (l - rb) / l * alpha;
+						d.x -= x *= l;
+						d.y -= y *= l;
+						quad.point.x += x;
+						quad.point.y += y;
+					}
+				}
+				return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+			});
+		};
+	}
+	/// C
+	*/
+	/// H for Highlight
+	//Toggle stores whether the highlighting is on
+	var toggle = 0;
+	//Create an array logging what is connected to what
+	var linkedByIndex = {};
+	for (i = 0; i < graph.nodes.length; i++) {
+		linkedByIndex[i + "," + i] = 1;
+	};
+	graph.links.forEach(function (d) {
+		linkedByIndex[d.source.index + "," + d.target.index] = 1;
+	});
+	//This function looks up whether a pair are neighbours
+	function neighboring(a, b) {
+		return linkedByIndex[a.index + "," + b.index];
+	}
+	function connectedNodes() {
+		if (toggle == 0) {
+			//Reduce the opacity of all but the neighbouring nodes
+			d = d3.select(this).node().__data__;
+			node.style("opacity", function (o) {
+				return neighboring(d, o) | neighboring(o, d) ? 1 : 0.1;
+			});
+			link.style("opacity", function (o) {
+				return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
+			});
+			//Reduce the op
+			toggle = 1;
+		}
+		else {
+			//Put them back to opacity=1
+			node.style("opacity", 1);
+			link.style("opacity", 1);
+			toggle = 0;
+		}
+	} 
+	/// H
+
+	// set the links
+	var link = svg.selectAll(".link")
+			.data(graph.links)
+			.enter().append("line")
+			.attr("class", "link")
+			/// A for arrows ///
+			.style("marker-end",  "url(#suit)") // arrows
+			/// A ///
+			.style("stroke-width", function(d) {
+				return Math.sqrt(d.value); 
+			});
+	// set the nodes
+	var node = svg.selectAll(".node")
+				.data(graph.nodes)
+				.enter().append("g")
+				.attr("class", "node")
+				.call(force.drag);
+	node.append("circle")
+		//.attr("r", function(d) { return SIZE_UNIT; })
+		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); })
+		.on("click", function(d) {
+			ShowNodeInfo(d);
+		})
+		/// H for highlight
+		.on('dblclick', connectedNodes)//; //Added code 
+		/// H
+		.style("fill", function(d) { return block_no_merge_color(d, color); });
+
+	node.append("title")
+			.text(function(d) { return d.name; });
+	// show text when hovering over it
+	node.append("svg:text")
+		.attr("class", "nodetext")
+		.attr("dx", offset) //12
+		.attr("dy", offset)
+		.text(function(d) { 
+			return d.name; 
+		});
+	// force.on("tick", tick) // or can be expressed as force.on("tick", function() {
+	function tick() {
+		link.attr("x1", function(d) { return d.source.x; })
+			.attr("y1", function(d) { return d.source.y; })
+			.attr("x2", function(d) { return d.target.x; })
+			.attr("y2", function(d) { return d.target.y; });
+		node.attr("cx", function(d) { return d.x; })
+			.attr("cy", function(d) { return d.y; });
+		node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+		/// C for collision detection
+		// node.each(collide(0.5)); //Added 
+		/// C
+	}
+}
+
+function init_graph_data_without_merge(rawdata) {
 	// processing data
+	var node_addr_list = new Map();
 	var graph = {"nodes": [], "links": []};
 	var input_list = [];
 	var output_list = [];
@@ -176,131 +306,7 @@ function showblock_without_merge(rawdata) {
 		}
 	}
 	/////
-	// draw the force-layout graph
-	force
-		.nodes(graph.nodes)
-		.links(graph.links)
-		.on("tick", tick) // debug add
-		.start();
-	/*
-	/// C for collision detection
-	var padding = 1, // separation between circles
-		radius=8;
-	function collide(alpha) {
-		var quadtree = d3.geom.quadtree(graph.nodes);
-		return function(d) {
-			var rb = 2*radius + padding,
-			nx1 = d.x - rb,
-			nx2 = d.x + rb,
-			ny1 = d.y - rb,
-			ny2 = d.y + rb;
-			quadtree.visit(function(quad, x1, y1, x2, y2) {
-				if (quad.point && (quad.point !== d)) {
-					var x = d.x - quad.point.x,
-					y = d.y - quad.point.y,
-					l = Math.sqrt(x * x + y * y);
-					if (l < rb) {
-						l = (l - rb) / l * alpha;
-						d.x -= x *= l;
-						d.y -= y *= l;
-						quad.point.x += x;
-						quad.point.y += y;
-					}
-				}
-				return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
-			});
-		};
-	}
-	/// C
-	*/
-	/// H for Highlight
-	//Toggle stores whether the highlighting is on
-	var toggle = 0;
-	//Create an array logging what is connected to what
-	var linkedByIndex = {};
-	for (i = 0; i < graph.nodes.length; i++) {
-		linkedByIndex[i + "," + i] = 1;
-	};
-	graph.links.forEach(function (d) {
-		linkedByIndex[d.source.index + "," + d.target.index] = 1;
-	});
-	//This function looks up whether a pair are neighbours
-	function neighboring(a, b) {
-		return linkedByIndex[a.index + "," + b.index];
-	}
-	function connectedNodes() {
-		if (toggle == 0) {
-			//Reduce the opacity of all but the neighbouring nodes
-			d = d3.select(this).node().__data__;
-			node.style("opacity", function (o) {
-				return neighboring(d, o) | neighboring(o, d) ? 1 : 0.1;
-			});
-			link.style("opacity", function (o) {
-				return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
-			});
-			//Reduce the op
-			toggle = 1;
-		}
-		else {
-			//Put them back to opacity=1
-			node.style("opacity", 1);
-			link.style("opacity", 1);
-			toggle = 0;
-		}
-	} 
-	/// H
-
-	// set the links
-	var link = svg.selectAll(".link")
-			.data(graph.links)
-			.enter().append("line")
-			.attr("class", "link")
-			/// A for arrows ///
-			.style("marker-end",  "url(#suit)") // arrows
-			/// A ///
-			.style("stroke-width", function(d) {
-				return Math.sqrt(d.value); 
-			});
-	// set the nodes
-	var node = svg.selectAll(".node")
-				.data(graph.nodes)
-				.enter().append("g")
-				.attr("class", "node")
-				.call(force.drag);
-	node.append("circle")
-		//.attr("r", function(d) { return SIZE_UNIT; })
-		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); })
-		.on("click", function(d) {
-			ShowNodeInfo(d);
-		})
-		/// H for highlight
-		.on('dblclick', connectedNodes)//; //Added code 
-		/// H
-		.style("fill", function(d) { return block_no_merge_color(d, color); });
-
-	node.append("title")
-			.text(function(d) { return d.name; });
-	// show text when hovering over it
-	node.append("svg:text")
-		.attr("class", "nodetext")
-		.attr("dx", offset) //12
-		.attr("dy", offset)
-		.text(function(d) { 
-			return d.name; 
-		});
-	// force.on("tick", tick) // or can be expressed as force.on("tick", function() {
-	function tick() {
-		link.attr("x1", function(d) { return d.source.x; })
-			.attr("y1", function(d) { return d.source.y; })
-			.attr("x2", function(d) { return d.target.x; })
-			.attr("y2", function(d) { return d.target.y; });
-		node.attr("cx", function(d) { return d.x; })
-			.attr("cy", function(d) { return d.y; });
-		node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-		/// C for collision detection
-		// node.each(collide(0.5)); //Added 
-		/// C
-	}
 	// clear the address list
 	node_addr_list.clear();
+	return graph;
 }
