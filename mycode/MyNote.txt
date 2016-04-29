@@ -129,3 +129,5 @@ online demo: 另一套可用于实验室集群以及web服务器，这些服务�
 192.168.10.9 /var/www/html/Bitcoin/javascript
 
 http://www.coindesk.com/api/
+
+// data structure

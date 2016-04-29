@@ -34,8 +34,67 @@ document.head.appendChild(new_element);
 //var GRAPH_DAT;
 //var ADDR_LIST = new Map(); // function included in mymap.js
 
-
+var GRAPH;
 /* functions */
+// the entrance of drawing the block
+function showblock() {
+	showbarchart_basic(); // test
+	var goal_block = block_height.value;
+	var goal_file = FILE_DIR + goal_block + ".json";
+	var block_view = $("input[name='block_view_type']:checked").val();
+	var graph;
+	var ADDR_LIST = new Map();
+	d3.json(goal_file, function(error, rawdata) {
+		if (error) throw error;
+		ShowBlockInfo(rawdata);
+		//console.log(block_view);
+		if(block_view == "merge") {
+			//RAW_DATA = rawdata;
+			//GRAPH_DAT = init_graph_data(rawdata);
+			graph = init_graph_data(rawdata, ADDR_LIST);
+			//update(graph);			
+		}
+		else if (block_view == "no_merge") {
+			// no_merge
+			//graph = showblock_without_merge(rawdata);
+			graph = init_graph_data_without_merge(rawdata);
+			//update_without_merge(graph);
+		}
+		else {
+			// module
+			console.log(block_view);
+			GRAPH = new Graph(rawdata);
+			GRAPH.init();
+		}
+	});
+}
+
+$(document).ready(function () {
+	$(".toggle-sidebar").click(function () {
+		$("#graph_sidebar").toggleClass("collapsed");
+		//$("#graph_sidebar").hide( "blind", { direction: "right" }, "slow" );
+		$("#graph_content").toggleClass("col-md-12 col-md-8");
+		//return false;
+		////////
+		// for temp use
+		// console.log(GRAPH);
+		if (GRAPH != undefined) {
+			var block_view = $("input[name='block_view_type']:checked").val();
+			if(block_view == "merge") {
+				update(GRAPH);			
+			}
+			else if (block_view == "no_merge") {
+				update_without_merge(GRAPH);
+			}
+			else {
+				// module
+				GRAPH.update();
+			}
+			////////
+		}
+	});
+});
+
 // time-stamp
 // reference: http://www.cnblogs.com/yjf512/p/3796229.html
 function formatDate(now, type) { // type 0: newDate.toGMTString(), type 1:
@@ -106,32 +165,13 @@ function PrintValueList(time, amount) {
 	return print_list;
 }
 
-// the entrance of drawing the block
-function showblock() {
-	var goal_block = block_height.value;
-	var goal_file = FILE_DIR + goal_block + ".json";
-	var block_view = $("input[name='block_view_type']:checked").val();
-	var graph;
-	var ADDR_LIST = new Map();
-	d3.json(goal_file, function(error, rawdata) {
-		if (error) throw error;
-		ShowBlockInfo(rawdata);
-		if(block_view == "merge") {
-			//RAW_DATA = rawdata;
-			//GRAPH_DAT = init_graph_data(rawdata);
-			graph = init_graph_data(rawdata, ADDR_LIST);
-			update(graph);			
-		}
-		else {
-			// no_merge
-			//graph = showblock_without_merge(rawdata);
-			graph = init_graph_data_without_merge(rawdata);
-			update_without_merge(graph);
-			//update(graph);
-		}
-	});
+/*
+function hello() {
+	//document.getElementById("graph_content").className = "col-md-12";
+	//var hey = new Node();
+	//Node("hey?");
 }
-
+//*/
 function ShowNodeInfo(d) {
 	var list_description_addr = document.getElementById("node_description_addr");
 	var list_description_time = document.getElementById("node_description_time");

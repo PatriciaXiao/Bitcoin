@@ -10,6 +10,48 @@ function block_no_merge_color(d, color_funct) {
 	return color_val;
 }
 
+function calc_no_merge_node_r(d) {
+	return SIZE_UNIT*Math.sqrt(d.times);
+}
+
+function update_no_merge_distance(graph) {
+	//
+	var n_links = graph.links.length;
+	var r_node_a;
+	var r_node_b;
+	//console.log(n_links);
+	//console.log(graph);
+	for (var i = 0; i < n_links; i++) {
+		/*
+		console.log("i="+i);
+		console.log(graph.links[i]);
+		console.log(graph.links[i].source);
+		console.log(graph.links[i].target);
+		console.log(graph.nodes[graph.links[i].source]); // undefined // idx -> Obj
+		console.log(graph.nodes[graph.links[i].target]); // undefined
+		console.log(graph.nodes[0]);
+		console.log(graph.nodes[1]);
+
+		r_node_a = calc_no_merge_node_r(graph.nodes[graph.links[i].source]);
+		r_node_b = calc_no_merge_node_r(graph.nodes[graph.links[i].target]);
+		graph.links[i].distance = r_node_a + r_node_b;
+		*/
+		if (graph.nodes[graph.links[i].source] != undefined) {
+			r_node_a = calc_no_merge_node_r(graph.nodes[graph.links[i].source]);
+			r_node_b = calc_no_merge_node_r(graph.nodes[graph.links[i].target]);
+		}
+		else {
+			r_node_a = calc_no_merge_node_r(graph.links[i].source);
+			r_node_b = calc_no_merge_node_r(graph.links[i].target);
+		}
+		
+		graph.links[i].distance = r_node_a + r_node_b;
+	}
+	// possible promotion:
+	// the nodes with more neighbours have longer distances for links attached to them
+	return graph;
+}
+
 //function showblock_without_merge(graph) {
 function update_without_merge(graph) {
 	//var graph = init_graph_data_without_merge(rawdata);
@@ -18,11 +60,14 @@ function update_without_merge(graph) {
 	//var width = G_WIDTH1, height = G_HEIGHT1;
 	var width = document.getElementById("block_graph").clientWidth;
 	var height = width;
-	var offset = width / 2;
-	//var no_merge_color = d3.scale.category20();
+	var offset = 12; 
+	update_no_merge_distance(graph);
 	var force = d3.layout.force()
 				.charge(-60) // -120
-				.linkDistance(30)
+				//.linkDistance(30)
+				.linkDistance(function(d) {
+					return 30 + d.distance; //d: link
+				})
 				.size([width, height]);
 	d3.select("#block_graph_svg").remove();
 	var svg = d3.select("#block_graph").append("svg")
@@ -53,7 +98,7 @@ function update_without_merge(graph) {
 		.links(graph.links)
 		.on("tick", tick) // debug add
 		.start();
-	/*
+	
 	/// C for collision detection
 	var padding = 1, // separation between circles
 		radius=8;
@@ -83,7 +128,7 @@ function update_without_merge(graph) {
 		};
 	}
 	/// C
-	*/
+	//*/
 	/// H for Highlight
 	//Toggle stores whether the highlighting is on
 	var toggle = 0;
@@ -140,9 +185,13 @@ function update_without_merge(graph) {
 				.call(force.drag);
 	node.append("circle")
 		//.attr("r", function(d) { return SIZE_UNIT; })
-		.attr("r", function(d) { return SIZE_UNIT*Math.sqrt(d.times); })
+		.attr("r", function(d) { 
+			//return SIZE_UNIT*Math.sqrt(d.times);
+			return calc_no_merge_node_r(d); 
+		})
 		.on("click", function(d) {
 			ShowNodeInfo(d);
+			update_graph_dat_without_merge(graph);
 		})
 		/// H for highlight
 		.on('dblclick', connectedNodes)//; //Added code 
@@ -169,7 +218,7 @@ function update_without_merge(graph) {
 			.attr("cy", function(d) { return d.y; });
 		node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 		/// C for collision detection
-		// node.each(collide(0.5)); //Added 
+		node.each(collide(0.5)); //Added 
 		/// C
 	}
 }
@@ -177,7 +226,8 @@ function update_without_merge(graph) {
 function init_graph_data_without_merge(rawdata) {
 	// processing data
 	var node_addr_list = new Map();
-	var graph = {"nodes": [], "links": []};
+	// nodes: nodes shown on screen; links: links shown on screen; 
+	var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": []};
 	var input_list = [];
 	var output_list = [];
 	var color_val = []; // depend on tx_index
@@ -253,24 +303,52 @@ function init_graph_data_without_merge(rawdata) {
 				graph.nodes[idx_output].amount.push(output_list[i][j].value);
 			}
 		}
-		/*
-		// links (j->k)
-		for (var j = 0; j < input_list[i].length; j++) {
-			// input list (j)
-			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
-			for (var k = 0; k < output_list[i].length; k++) {
+		// virtual nodes for payers
+		idx_trans = -1;
+		if (input_list[i].length > 1) {
+			graph.nodes[cnt_node] = 
+				{"name": "transaction "+i, 
+				"addr": i,
+				"times": input_list[i].length, 
+				"amount": [sum_in, sum_out], // sum_in? sum_out?
+				"time": [time_list[i], time_list[i]], "status": [0, 1], "color_val": color_val[i],
+				"type": false // fake address, transaction
+			};
+			idx_trans = cnt_node;
+			cnt_node++;
+		}
+		// links
+		if (idx_trans != -1) {
+			// multiple inputs
+			for (var j = 0; j < input_list[i].length; j++) {
+				// input list (j)
+				idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
+				graph.links[cnt_link] = {"source": idx_input, "target": idx_trans, "times": 1, "value": 1, "distance": 0};
+				cnt_link++;
+			}
+			for (var j = 0; j < output_list[i].length; j++) {
 				// output list (k)
-				idx_output = node_addr_list.get(output_list[i][k].addr);
+				idx_output = node_addr_list.get(output_list[i][j].addr);
+				graph.links[cnt_link] = {"source": idx_trans, "target": idx_output, "times": 1, "value": 1, "distance": 0};
+				cnt_link++;
+			}
+		}
+		else {
+			// one input
+			idx_input = node_addr_list.get(input_list[i][0].prev_out.addr);
+			for (var j = 0; j < output_list[i].length; j++) {
+				// output list (k)
+				idx_output = node_addr_list.get(output_list[i][j].addr);
 				if (idx_input != idx_output) { // if the input and output links aren't the same
 					idx_link = -1;
-					for (var p = 0; p < cnt_link; p++) {
-						if (graph.links[p].source == idx_input && graph.links[p].target == idx_output) {
-							idx_link = p;
+					for (var k = 0; k < cnt_link; k++) {
+						if (graph.links[k].source == idx_input && graph.links[k].target == idx_output) {
+							idx_link = k;
 							break;
 						}
 					}
 					if (idx_link == -1) {
-						graph.links[cnt_link] = {"source": idx_input, "target": idx_output, "times": 1, "value": 1};
+						graph.links[cnt_link] = {"source": idx_input, "target": idx_output, "times": 1, "value": 1, "distance": 0};
 						cnt_link++;
 					}
 					else { // if have been recorded
@@ -279,34 +357,15 @@ function init_graph_data_without_merge(rawdata) {
 				}
 			}
 		}
-		*/
-		// newer version
-		graph.nodes[cnt_node] = 
-			{"name": "transaction "+i, 
-			"addr": i,
-			"times": 1, 
-			"amount": [sum_in, sum_out], // sum_in? sum_out?
-			"time": [time_list[i], time_list[i]], "status": [0, 1], "color_val": color_val[i],
-			"type": false // fake address, transaction
-		};
-		idx_trans = cnt_node;
-		cnt_node++;
-		// links
-		for (var j = 0; j < input_list[i].length; j++) {
-			// input list (j)
-			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
-			graph.links[cnt_link] = {"source": idx_input, "target": idx_trans, "times": 1, "value": 1};
-			cnt_link++;
-		}
-		for (var j = 0; j < output_list[i].length; j++) {
-			// output list (k)
-			idx_output = node_addr_list.get(output_list[i][j].addr);
-			graph.links[cnt_link] = {"source": idx_trans, "target": idx_output, "times": 1, "value": 1};
-			cnt_link++;
-		}
 	}
 	/////
 	// clear the address list
 	node_addr_list.clear();
+	update_without_merge(graph);
+	GRAPH = graph; ////////temp
 	return graph;
+}
+
+function update_graph_dat_without_merge(graph) {
+	// 
 }

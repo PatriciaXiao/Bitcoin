@@ -14,22 +14,51 @@ function block_merge_color(d, color, colorB){
 	}
 	return colorRGB;
 }
+function calc_node_r(d) {
+	return SIZE_UNIT*Math.sqrt(d.times);
+}
+
+function update_distance(graph) {
+	//
+	var n_links = graph.links.length;
+	var r_node_a;
+	var r_node_b;
+	for (var i = 0; i < n_links; i++) {
+		if (graph.nodes[graph.links[i].source] != undefined) {
+			r_node_a = calc_no_merge_node_r(graph.nodes[graph.links[i].source]);
+			r_node_b = calc_no_merge_node_r(graph.nodes[graph.links[i].target]);
+		}
+		else {
+			r_node_a = calc_no_merge_node_r(graph.links[i].source);
+			r_node_b = calc_no_merge_node_r(graph.links[i].target);
+		}
+		
+		graph.links[i].distance = r_node_a + r_node_b;
+	}
+	// possible promotion:
+	// the nodes with more neighbours have longer distances for links attached to them
+	return graph;
+}
 
 function update(graph) {
 	//var rawdata = RAW_DATA;
 	//var graph = update_graph_data(GRAPH_DAT);
-	graph = update_graph_data(graph);
+	// graph = update_graph_data(graph);
 	var color = d3.scale.category20();
 	var colorB = d3.scale.category20b();
 	// basic parameters settings
 	var width = document.getElementById("block_graph").clientWidth;
 	var height = width;//document.getElementById("block_graph").clientHeight;
-	var offset = width / 2;
+	var offset = 12; // 12 // width / 2
 	// width:500, height:600, distance(auto), linkStrength:2, charge: (-10 / k)*1.5 , gravity: 100 * k
 	// var k = Math.sqrt(nodes.length / (width * height));
+	update_distance(graph);
 	var force = d3.layout.force()
 				.charge(-60) // -120
-				.linkDistance(30)
+				//.linkDistance(30)
+				.linkDistance(function(d) {
+					return 30 + d.distance; //d: link
+				})
 				.size([width, height]);
 
 	d3.select("#block_graph_svg").remove();
@@ -63,6 +92,36 @@ function update(graph) {
 		.on("tick", tick) 
 		.start();
 
+	/// C for collision detection
+	var padding = 1, // separation between circles
+		radius=8;
+	function collide(alpha) {
+		var quadtree = d3.geom.quadtree(graph.nodes);
+		return function(d) {
+			var rb = 2*radius + padding,
+			nx1 = d.x - rb,
+			nx2 = d.x + rb,
+			ny1 = d.y - rb,
+			ny2 = d.y + rb;
+			quadtree.visit(function(quad, x1, y1, x2, y2) {
+				if (quad.point && (quad.point !== d)) {
+					var x = d.x - quad.point.x,
+					y = d.y - quad.point.y,
+					l = Math.sqrt(x * x + y * y);
+					if (l < rb) {
+						l = (l - rb) / l * alpha;
+						d.x -= x *= l;
+						d.y -= y *= l;
+						quad.point.x += x;
+						quad.point.y += y;
+					}
+				}
+				return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+			});
+		};
+	}
+	/// C
+	//*/
 
 	// set the links
 	var link = svg.selectAll(".link")
@@ -123,6 +182,9 @@ function update(graph) {
 		node.attr("cx", function(d) { return d.x; })
 			.attr("cy", function(d) { return d.y; });
 		node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+		/// C for collision detection
+		node.each(collide(0.5)); //Added 
+		/// C
 	}
 }
 
@@ -138,6 +200,7 @@ function click_node(d, graph) {
 			d.children = d._children;
 			d._children = null;
 		}
+		graph = update_graph_data(graph);
 		update(graph);
 	}
 	// show information
@@ -348,6 +411,7 @@ function init_graph_data(rawdata, ADDR_LIST) {
 		}
 		
 		if (idx_input == -1) { // not yet inserted
+			
 			graph.init_nodes[cnt_node] = 
 					{"name": NickName(0, cnt_node), 
 					"addr": cnt_node,
@@ -355,6 +419,19 @@ function init_graph_data(rawdata, ADDR_LIST) {
 					"color_val": false, //i,
 					"times": 1, "amount": [], 
 					"_children": []};
+
+			//console.log(graph.init_nodes[cnt_node]);
+			/*
+			var testtmp = new Node(cnt_node);
+			var testtmp2 = testtmp; // pointer
+			var testtmp3 = testtmp.copy();
+			testtmp.color_val = true;
+			console.log(testtmp.color_val);
+			console.log(testtmp2.color_val);
+			console.log(testtmp3.color_val);
+			//graph.init_nodes[cnt_node] = new Node(cnt_node);
+			*/
+
 			idx_input = cnt_node;
 			for (var j = 0; j < input_list[i].length; j++) {
 				// update information for each node
@@ -480,7 +557,7 @@ function init_graph_data(rawdata, ADDR_LIST) {
 					}
 				}
 				if (idx_link == -1) {
-					graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1, "type": 1};
+					graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1, "type": 1, "distance": 0};
 					cnt_link++;
 				}
 			}
@@ -495,16 +572,15 @@ function init_graph_data(rawdata, ADDR_LIST) {
 	*/
 	graph.nodes = graph.init_nodes;
 	graph.links = graph.init_links;
+	update(graph);
+	GRAPH=graph;/////////temp;
 	return graph;
 }
 
 function update_graph_data(graph) {
-	var newgraph = graph;
-	// modify the new graph
-	
+	// modify the new graph	
 	graph.child_nodes = [];
 	graph.child_links = [];
-
 	//console.log("length="+graph.init_nodes.length);
 	//console.log(graph.init_nodes[5]);
 	//console.log(graph.init_nodes[6]);
@@ -516,13 +592,13 @@ function update_graph_data(graph) {
 			for (var j = 0; j < graph.init_nodes[i].children.length; j++) {
 				graph.child_links[graph.child_links.length] = 
 							{"source": i, "target": graph.init_nodes.length + graph.child_nodes.length + j,
-							"value": 1, "type": 0};
+							"value": 1, "type": 0, "distance": 0};
 			}
 			graph.child_nodes = graph.child_nodes.concat(graph.init_nodes[i].children);
 		}
 	}
 	// combine together
-	newgraph.nodes = graph.init_nodes.concat(graph.child_nodes);
-	newgraph.links = graph.init_links.concat(graph.child_links); // link needs to be modified for it is marked as index
-	return newgraph;
+	graph.nodes = graph.init_nodes.concat(graph.child_nodes);
+	graph.links = graph.init_links.concat(graph.child_links); // link needs to be modified for it is marked as index
+	return graph;
 }
