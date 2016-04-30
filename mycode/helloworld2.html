@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head> 
+<title></title> 
+<style type="text/css"> 
+.content 
+{ 
+border: 1px solid #ccc; 
+width: 440px; 
+overflow: hidden; 
+margin: 10px; 
+} 
+</style> 
+<script type="text/javascript" src = "./javascript/lib/jquery-2.2.1.js"></script> 
+<script type="text/javascript"> 
+$(document).ready(function() { 
+if ($('#content').height() > 400) 
+$('#content').height(400); 
+$('#bigger').toggle(function() { 
+$('#content').height($('#content').height() + 100); 
+$('#bigger').html('Smaller'); 
+}, function() { 
+$('#content').height($('#content').height() - 100); 
+$('#bigger').html('Larger'); 
+}) 
+}); 
+</script> 
+</head> 
+<body> 
+<div id="content" class="content"> 
+Content 1<br /> 
+Content 2<br /> 
+Content 3<br /> 
+Content 4<br /> 
+Content 5<br /> 
+Content 6<br /> 
+Content 7<br /> 
+Content 8<br /> 
+Content 9<br /> 
+Content 10<br /> 
+Content 11<br /> 
+Content 12<br /> 
+Content 13<br /> 
+Content 14<br /> 
+Content 15<br /> 
+Content 16<br /> 
+Content 17<br /> 
+Content 18<br /> 
+Content 19<br /> 
+Content 20<br /> 
+Content 21<br /> 
+Content 22<br /> 
+Content 23<br /> 
+Content 24<br /> 
+Content 25<br /> 
+</div> 
+<br /> 
+<span id="bigger">Expand</span> 
+</body> 
+</html> 

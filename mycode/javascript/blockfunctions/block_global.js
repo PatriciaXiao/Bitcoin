@@ -38,11 +38,11 @@ var GRAPH;
 /* functions */
 // the entrance of drawing the block
 function showblock() {
-	showbarchart_basic(); // test
 	var goal_block = block_height.value;
 	var goal_file = FILE_DIR + goal_block + ".json";
 	var block_view = $("input[name='block_view_type']:checked").val();
 	var graph;
+	var bar_chart;
 	var ADDR_LIST = new Map();
 	d3.json(goal_file, function(error, rawdata) {
 		if (error) throw error;
@@ -66,6 +66,9 @@ function showblock() {
 			GRAPH = new Graph(rawdata);
 			GRAPH.init();
 		}
+		// show details
+		bar_chart = bar_chart_data(rawdata);
+		showbarchart_basic(bar_chart);
 	});
 }
 
@@ -94,6 +97,48 @@ $(document).ready(function () {
 		}
 	});
 });
+
+/*
+var currentZoom = 1.0;
+$(document).ready(function () {
+	$('#btn_ZoomIn').click(
+		function () {
+			$('#block_graph').animate({ 'zoom': currentZoom += .5 }, 'slow');
+			//$('#block_graph_svg').animate({ 'zoom': currentZoom += .5 }, 'slow');
+		}
+	);
+	$('#btn_ZoomOut').click(
+		function () {
+			$('#block_graph').animate({ 'zoom': currentZoom -= .5 }, 'slow');
+		}
+	);
+	$('#btn_ZoomReset').click(
+		function () {
+			currentZoom = 1.0
+			$('#block_graph').animate({ 'zoom': 1 }, 'slow');
+		}
+	);}
+);
+*/
+var currentZoom = 1.0;
+$(document).ready(function () {
+	$('#btn_ZoomIn').click(
+		function () {
+			$('#block_graph_svg').animate({ 'zoom': currentZoom += .5 }, 'slow');
+		}
+	);
+	$('#btn_ZoomOut').click(
+		function () {
+			$('#block_graph_svg').animate({ 'zoom': currentZoom -= .5 }, 'slow');
+		}
+	);
+	$('#btn_ZoomReset').click(
+		function () {
+			currentZoom = 1.0
+			$('#block_graph_svg').animate({ 'zoom': 1 }, 'slow');
+		}
+	);}
+);
 
 // time-stamp
 // reference: http://www.cnblogs.com/yjf512/p/3796229.html
