@@ -14,9 +14,14 @@ Node.prototype.copy = function() {
 	return newNode;
 }
 
-function Graph(rawdata) {
+function Graph(rawdata, id) {
 	this.rawdata = rawdata;
 	this.graph;
+	this.force;
+	this.svg;
+	this.addr_list = new Map();
+	this.width = document.getElementById(id).clientWidth;
+	this.height = document.getElementById(id).clientHeight;
 }
 
 //function color(d) {
@@ -62,7 +67,7 @@ Graph.prototype.update_distance = function() {
 Graph.prototype.init = function() {
 	var rawdata = this.rawdata;
 	// processing data
-	var node_addr_list = new Map();
+	var node_addr_list = this.addr_list;
 	// nodes: nodes shown on screen; links: links shown on screen; 
 	var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": []};
 	var input_list = [];
@@ -197,7 +202,8 @@ Graph.prototype.init = function() {
 	}
 	/////
 	// clear the address list
-	node_addr_list.clear();
+	//node_addr_list.clear();
+	this.addr_list = node_addr_list;
 	this.graph = graph;
 	this.update(graph);
 	return graph;
@@ -206,17 +212,23 @@ Graph.prototype.init = function() {
 Graph.prototype.update = function () {
 	var graph = this.graph;
 	var obj = this;
-	var width = document.getElementById("block_graph").clientWidth;
-	var height = width;
+	//var width = this.width / currentZoom;//document.getElementById("block_graph").clientWidth;
+	//var height = this.height / currentZoom;//document.getElementById("block_graph").clientHeight;
+	var width = this.width;
+	var height = this.height;
+	console.log([width, height]);
 	var offset = 12; 
 	this.update_distance();
 	var force = d3.layout.force()
 				.charge(-60) // -120
-				//.linkDistance(30)
+				.chargeDistance(360)
+				//.linkStrength()
 				.linkDistance(function(d) {
 					return 30 + d.distance; //d: link
 				})
+				//.alpha(0.1)
 				.size([width, height]);
+
 	d3.select("#block_graph_svg").remove();
 	var svg = d3.select("#block_graph").append("svg")
 				.attr("width", width)
@@ -245,6 +257,7 @@ Graph.prototype.update = function () {
 		.nodes(graph.nodes)
 		.links(graph.links)
 		.on("tick", tick) // debug add
+		.alpha(0.1)
 		.start();
 	
 	/// C for collision detection
@@ -326,11 +339,13 @@ Graph.prototype.update = function () {
 				return Math.sqrt(d.value); 
 			});
 	// set the nodes
+
 	var node = svg.selectAll(".node")
 				.data(graph.nodes)
 				.enter().append("g")
 				.attr("class", "node")
 				.call(force.drag);
+
 	node.append("circle")
 		//.attr("r", function(d) { return SIZE_UNIT; })
 		.attr("r", function(d) { 
@@ -338,6 +353,7 @@ Graph.prototype.update = function () {
 			return obj.calc_r(d); 
 		})
 		.on("click", function(d) {
+			if (d3.event.defaultPrevented) return; // ignore drag
 			ShowNodeInfo(d);
 			//update_graph_dat_without_merge(graph);
 		})
@@ -369,4 +385,26 @@ Graph.prototype.update = function () {
 		node.each(collide(0.5)); //Added 
 		/// C
 	}
+
+	console.log([document.getElementById("block_graph").clientWidth, document.getElementById("block_graph").clientHeight]);
+	//console.log(node);
+	/*
+	console.log(svg);
+	console.log(svg[0][0].clientWidth);
+	console.log(svg[0][0].clientHeight);
+	console.log(graph.nodes);
+	console.log(graph.nodes[0].x);
+	console.log(graph.nodes[1].x);
+	*/
+
+	this.force = force;
+	this.svg = svg;
+}
+
+
+Graph.prototype.getXandY = function() {
+	var graph = this.graph;
+	console.log(graph.nodes);
+	console.log(graph.nodes[0]);
+	console.log(graph.nodes[1]);
 }

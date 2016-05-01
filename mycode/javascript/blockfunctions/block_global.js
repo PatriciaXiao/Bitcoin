@@ -16,7 +16,8 @@ var COLOR_HIGHLIGHT = "#d62728";
 
 var LIST_LEN_THRESHOLD = 8;
 //var UP_DOWN_SCROLL_STYLE = "width:100%;height:150px;line-height:3em;overflow:auto;padding:5px;";
-var UP_DOWN_SCROLL_STYLE = "width:100%;height:150px;overflow:auto;padding:1px;";
+//var UP_DOWN_SCROLL_STYLE = "width:100%;height:150px;overflow:auto;padding:1px;";
+//var UP_DOWN_SCROLL_STYLE = "width:100%;height:70px;overflow:auto;padding:1px;";
 var DATE_TYPE = 1;//0;
 
 /* js could be loaded dynamically this way:
@@ -34,9 +35,36 @@ document.head.appendChild(new_element);
 //var GRAPH_DAT;
 //var ADDR_LIST = new Map(); // function included in mymap.js
 
+//var currentZoom = 1.0;
+ $(function() {
+    $("#slider-vertical").slider({
+      orientation: "vertical",
+      //range: "min",
+      min: 0,
+      max: 100, // 100
+      value: 0, // 60
+      slide: function( event, ui ) {
+      	var zoom_val = ui.value / 100;
+        $("#amount").val( zoom_val ); // / 100
+        //currentZoom = 1 + zoom_val;
+        //GRAPH.update();
+        $('#block_graph_svg').animate({ 'zoom': 1 + zoom_val }, 'fast'); // "slow"
+      }
+    });
+    $("#amount").val( $( "#slider-vertical" ).slider( "value" ) );
+  });
+
 var GRAPH;
 /* functions */
 // the entrance of drawing the block
+document.onreadystatechange = function () {
+	console.log(document.getElementById("block_graph").clientWidth);
+	console.log(document.getElementById("block_graph").clientHeight);
+	console.log(document.getElementById("block_graph").scrollLeft);
+	console.log(document.getElementById("block_graph").scrollWidth);
+	console.log(document.getElementById("block_graph").offsetWidth);
+}; 
+
 function showblock() {
 	var goal_block = block_height.value;
 	var goal_file = FILE_DIR + goal_block + ".json";
@@ -47,7 +75,12 @@ function showblock() {
 	d3.json(goal_file, function(error, rawdata) {
 		if (error) throw error;
 		ShowBlockInfo(rawdata);
+		// testing
+		GRAPH = new Graph(rawdata, "block_graph");
+		GRAPH.init();
+		//GRAPH.getXandY();
 		//console.log(block_view);
+		/*
 		if(block_view == "merge") {
 			//RAW_DATA = rawdata;
 			//GRAPH_DAT = init_graph_data(rawdata);
@@ -68,77 +101,33 @@ function showblock() {
 		}
 		// show details
 		bar_chart = bar_chart_data(rawdata);
-		showbarchart_basic(bar_chart);
+		//showbarchart_basic(bar_chart);
+		*/
 	});
 }
 
-$(document).ready(function () {
+function ToggleSiderbar(elem) {
+	$("#graph_sidebar").toggle(1000);
+	/*
+	if (elem.checked == true) {
+		console.log("checked")
+		//$("#graph_sidebar").toggleClass("collapsed");
+		$("#graph_sidebar").toggle(1000);
+	}
+	else {
+		console.log("unchecked")
+		//$("#graph_sidebar").toggleClass("expanded");
+	}
+	*/
+}
+
+/*$(document).ready(function () {
 	$(".toggle-sidebar").click(function () {
 		$("#graph_sidebar").toggleClass("collapsed");
-		//$("#graph_sidebar").hide( "blind", { direction: "right" }, "slow" );
-		$("#graph_content").toggleClass("col-md-12 col-md-8");
-		//return false;
-		////////
-		// for temp use
-		// console.log(GRAPH);
-		if (GRAPH != undefined) {
-			var block_view = $("input[name='block_view_type']:checked").val();
-			if(block_view == "merge") {
-				update(GRAPH);			
-			}
-			else if (block_view == "no_merge") {
-				update_without_merge(GRAPH);
-			}
-			else {
-				// module
-				GRAPH.update();
-			}
-			////////
-		}
 	});
-});
+	
+});*/
 
-/*
-var currentZoom = 1.0;
-$(document).ready(function () {
-	$('#btn_ZoomIn').click(
-		function () {
-			$('#block_graph').animate({ 'zoom': currentZoom += .5 }, 'slow');
-			//$('#block_graph_svg').animate({ 'zoom': currentZoom += .5 }, 'slow');
-		}
-	);
-	$('#btn_ZoomOut').click(
-		function () {
-			$('#block_graph').animate({ 'zoom': currentZoom -= .5 }, 'slow');
-		}
-	);
-	$('#btn_ZoomReset').click(
-		function () {
-			currentZoom = 1.0
-			$('#block_graph').animate({ 'zoom': 1 }, 'slow');
-		}
-	);}
-);
-*/
-var currentZoom = 1.0;
-$(document).ready(function () {
-	$('#btn_ZoomIn').click(
-		function () {
-			$('#block_graph_svg').animate({ 'zoom': currentZoom += .5 }, 'slow');
-		}
-	);
-	$('#btn_ZoomOut').click(
-		function () {
-			$('#block_graph_svg').animate({ 'zoom': currentZoom -= .5 }, 'slow');
-		}
-	);
-	$('#btn_ZoomReset').click(
-		function () {
-			currentZoom = 1.0
-			$('#block_graph_svg').animate({ 'zoom': 1 }, 'slow');
-		}
-	);}
-);
 
 // time-stamp
 // reference: http://www.cnblogs.com/yjf512/p/3796229.html
@@ -203,24 +192,18 @@ function PrintDateList(array, iomark) {
 function PrintValueList(time, amount) {
 	var date_list = FormatDateList(time);
 	var print_list = [];
-	print_list[0] = "<br>" + "transact " + amount[0] / AMOUNT_UNIT + " at: " + date_list[0];
+	print_list[0] = "transact " + amount[0] / AMOUNT_UNIT + " at: " + date_list[0];
 	for (var i = 1; i < time.length; i++) {
 		print_list[i] = "<br>" + "transact " + amount[i] / AMOUNT_UNIT + " at: " + date_list[i];
 	}
 	return print_list;
 }
 
-/*
-function hello() {
-	//document.getElementById("graph_content").className = "col-md-12";
-	//var hey = new Node();
-	//Node("hey?");
-}
-//*/
 function ShowNodeInfo(d) {
 	var list_description_addr = document.getElementById("node_description_addr");
 	var list_description_time = document.getElementById("node_description_time");
 	var list_description_value = document.getElementById("node_description_value");
+	/*
 	if(d.time.length <= LIST_LEN_THRESHOLD) {
 		list_description_time.setAttribute("style", "");
 		list_description_value.setAttribute("style", "");
@@ -229,9 +212,10 @@ function ShowNodeInfo(d) {
 		list_description_time.setAttribute("style", UP_DOWN_SCROLL_STYLE);
 		list_description_value.setAttribute("style", UP_DOWN_SCROLL_STYLE);
 	}
+	*/
 	list_description_addr.innerHTML = "address: "+d.addr;
-	list_description_time.innerHTML = PrintDateList(d.time, d.status);
-	list_description_value.innerHTML = PrintValueList(d.time, d.amount);
+	list_description_time.innerHTML = "time: <br>" + PrintDateList(d.time, d.status);
+	list_description_value.innerHTML = "value: <br>" + PrintValueList(d.time, d.amount);
 }
 
 function ShowBlockInfo(rawdata) {
@@ -251,7 +235,8 @@ function ShowBlockInfo(rawdata) {
 		block_time_type = "unknown";
 	}
 	list_description_block.innerHTML = 
-		"hash: "+block_hash+"<br>"
+		"Block info:" + "<br>"
+		+"hash: "+block_hash+"<br>"
 		+"time: "+formatDate(block_time, DATE_TYPE)+"<br>"
 		+"fee: "+block_fee+"<br>"
 		+"number of transactions: "+block_n_tx+"<br>"

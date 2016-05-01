@@ -1,5 +1,10 @@
+
 .collapsed {
-	display: none; /* hide it for small displays */
+	display: none;
+}
+
+.expanded {
+	display: block;
 }
 
 /*
@@ -72,3 +77,57 @@ pointer-events: none;
 .x.axis path {
   display: none;
 }
+
+/*
+#detial_block{
+	opacity:0.6;
+	position:absolute;
+	top:0;
+	right:0px;
+	width:200px;
+	height:200px;
+	background:white;
+	border:2px solid #aaa
+}
+*/
+
+
+.detial_blocks{
+	opacity:0.85; /*0.6->0.8->0.85*/
+	position:absolute;
+	top: 50px; /*0->50px;*/
+	right:0px;
+	width:300px;/*200px;->300*/
+	height:500px; /*200px;->400->600->500*/
+	background:white;
+	/*border:2px solid #aaa;*/
+}
+
+.block_canvas {
+	position:absolute;
+	opacity:1.0; /*0.8->1.0*/
+	top:50px; /*0->50px;*/
+	left: 0px; /*0->0px;*/
+	right: 0px; /*0->0px;*/
+	width: 100%;
+	height:70%;
+	/*height:100%;*/
+	border:2px solid #aaa;
+	overflow:auto;
+		
+}
+
+.info_square {
+	width:100%;
+	height:100px; /*70*/
+	overflow:auto;
+	opacity: 0.8;
+	/*
+	margin: 5px;
+	padding: 1px;*/
+}
+
+.outlined_square {
+	border: 1px solid #aaa;
+}
+

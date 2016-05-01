@@ -1,60 +1,59 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head> 
-<title></title> 
-<style type="text/css"> 
-.content 
-{ 
-border: 1px solid #ccc; 
-width: 440px; 
-overflow: hidden; 
-margin: 10px; 
-} 
-</style> 
-<script type="text/javascript" src = "./javascript/lib/jquery-2.2.1.js"></script> 
-<script type="text/javascript"> 
-$(document).ready(function() { 
-if ($('#content').height() > 400) 
-$('#content').height(400); 
-$('#bigger').toggle(function() { 
-$('#content').height($('#content').height() + 100); 
-$('#bigger').html('Smaller'); 
-}, function() { 
-$('#content').height($('#content').height() - 100); 
-$('#bigger').html('Larger'); 
-}) 
-}); 
-</script> 
-</head> 
-<body> 
-<div id="content" class="content"> 
-Content 1<br /> 
-Content 2<br /> 
-Content 3<br /> 
-Content 4<br /> 
-Content 5<br /> 
-Content 6<br /> 
-Content 7<br /> 
-Content 8<br /> 
-Content 9<br /> 
-Content 10<br /> 
-Content 11<br /> 
-Content 12<br /> 
-Content 13<br /> 
-Content 14<br /> 
-Content 15<br /> 
-Content 16<br /> 
-Content 17<br /> 
-Content 18<br /> 
-Content 19<br /> 
-Content 20<br /> 
-Content 21<br /> 
-Content 22<br /> 
-Content 23<br /> 
-Content 24<br /> 
-Content 25<br /> 
-</div> 
-<br /> 
-<span id="bigger">Expand</span> 
-</body> 
-</html> 
+	<head>
+		<meta charset="UTF-8">	
+		<title>Bitcoin Demo V1.2</title>
+		<link rel="stylesheet"
+			  href="css/bootstrap.css"
+			/>
+		<link rel="stylesheet"
+			  href="css/styles.css"
+			/>
+		<link rel="stylesheet"
+			  href="css/jquery-ui.css"
+			/>
+		<link rel="shortcut icon" href="image/favicon.ico" />
+		<script type="text/javascript" src = "./javascript/lib/jquery-2.2.1.js"></script>
+		<script type="text/javascript" src = "./javascript/lib/jquery-ui.js"> </script>
+		<script type="text/javascript" src = "./javascript/lib/d3.js"></script>
+		<script type="text/javascript" src = "./javascript/lib/bootstrap.js"></script>
+
+		<script type="text/javascript" src = "./javascript/lib/stl_map.js"></script>
+
+		<script type="text/javascript" src = "./javascript/blockfunctions/force_graph_mod.js"></script>
+		<script type="text/javascript" src = "./javascript/blockfunctions/block_global.js"></script>
+		<script type="text/javascript" src = "./javascript/blockfunctions/blockfunc_merge_addr.js"></script>
+		<script type="text/javascript" src = "./javascript/blockfunctions/blockfunc_no_merge_addr.js"></script>
+
+		<script type="text/javascript" src = "./javascript/barchart/barchart_basic.js"></script>
+
+
+	</head>
+	<body align = "center">
+
+<!-- Docs master nav -->
+<header class="navbar navbar-inverse navbar-fixed-top bs-docs-nav" role="banner">
+  <div class="container">
+    <div class="navbar-header">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+      <a href="Index.html" class="navbar-brand">Bootstrap</a> </div>
+    <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+      <ul class="nav navbar-nav">
+        <li class="active"> <a href="getting-started.html">起步</a> </li>
+        <li> <a href="css.html">CSS</a> </li>
+        <li> <a href="components.html">组件</a> </li>
+        <li> <a href="javascript.html">JavaScript插件</a> </li>
+        <li> <a href="customize.html">定制</a> </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li> <a href="about.html">关于</a> </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<!-- Docs page layout -->
+
+
+
+	</body>
+</html>
