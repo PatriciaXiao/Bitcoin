@@ -30,8 +30,8 @@
 
 	</head>
 	<body align = "center">
-		<!--nav class="navbar navbar-default navbar-fixed-top" role="navigation"-->
-		<nav class="navbar navbar-default navbar-static-top" role="navigation">
+		<!--nav class="navbar navbar-default navbar-static-top" role="navigation"-->
+		<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
 			<div class="navbar-header">
 				<button type="btn btn-responsive-nav btn-inverse" class="navbar-toggle" data-toggle="collapse" data-target="#bitcoin-navbar-collapse">
 				<span class="sr-only">Switch Navigation</span>
@@ -70,6 +70,7 @@
 						</a>
 						<ul class="dropdown-menu">
 							<li>
+								&nbsp;
 								<input type="checkbox" id="toggle-sidebar" onchange="ToggleSiderbar(this);">
 									Toggle Sidebar
 								</lnput>
@@ -88,17 +89,18 @@
 			</div>
 		</nav>
 
-		<div class="container-fluid">
+		<!--div class="container-fluid"-->
+		<div class="container">
 			<!--div id = "graph_content" class = "block_canvas">
 				<div id = "block_graph">
 				</div>
 			</div-->
 			<div id = "block_graph" class = "block_canvas"></div>
 
-			<p align = "left">
+			<!--p align = "left">
 				<label for="amount">Value: </label>
 				<input type="text" id="amount" style="border:0;color:#f6931f;font-weight:bold;">
-			</p>
+			</p-->
 			<div id="slider-vertical" align="left" style="height:200px;"></div>
 
 			<div id = "graph_sidebar" class = "detial_blocks">

@@ -1,18 +1,23 @@
 /* variables */
 var FILE_DIR = "data/";
-var G_WIDTH1 = $(window).width();//960;
-var G_HEIGHT1 = $(window).height();//600;
+//var G_WIDTH1 = $(window).width();//960;
+//var G_HEIGHT1 = $(window).height();//600;
+var G_WIDTH = $(window).width();//960;
+var G_HEIGHT = $(window).height() - 50;//600;
+//console.log(G_HEIGHT);
 //var width = document.getElementById("block_graph").clientWidth;
 //var height = document.getElementById("block_graph").clientHeight;
 var SIZE_UNIT = 5;
-var AMOUNT_UNIT = 1000000;
+var AMOUNT_UNIT = 100000000; // TOSHI
 // https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
+
 var COLOR_ADDR = "#e7ba52";
 var COLOR_PERSON = "#8ca252";//"#637939";
 var COLOR_PALE = "#aaaaaa";
-var COLOR_VIRTUAL = "#fdae6b"; // virtual nodes (stand for transaction)
-
+var COLOR_VIRTUAL = "#9c9ede";//"#fdae6b"; // virtual nodes (stand for transaction)
 var COLOR_HIGHLIGHT = "#d62728";
+
+
 
 var LIST_LEN_THRESHOLD = 8;
 //var UP_DOWN_SCROLL_STYLE = "width:100%;height:150px;line-height:3em;overflow:auto;padding:5px;";
@@ -36,6 +41,7 @@ document.head.appendChild(new_element);
 //var ADDR_LIST = new Map(); // function included in mymap.js
 
 //var currentZoom = 1.0;
+/*
  $(function() {
     $("#slider-vertical").slider({
       orientation: "vertical",
@@ -53,16 +59,42 @@ document.head.appendChild(new_element);
     });
     $("#amount").val( $( "#slider-vertical" ).slider( "value" ) );
   });
+*/
+/*
+$(document).ready(function(){
+	var iframeHeight = function () {
+		var _height = $(window).height() - 50;
+		$('#block_graph').height(_height);
+	}
+	window.onresize = iframeHeight;
+	$(function () {
+		iframeHeight();
+	});
+});
+*/
+
+$(document).ready(function(){
+	var iframeHeight = function () {
+		var _height = G_HEIGHT;
+		$('#block_graph').height(_height);
+	}
+	window.onresize = iframeHeight;
+	$(function () {
+		iframeHeight();
+	});
+});
 
 var GRAPH;
 /* functions */
 // the entrance of drawing the block
 document.onreadystatechange = function () {
+	/*
 	console.log(document.getElementById("block_graph").clientWidth);
 	console.log(document.getElementById("block_graph").clientHeight);
 	console.log(document.getElementById("block_graph").scrollLeft);
 	console.log(document.getElementById("block_graph").scrollWidth);
 	console.log(document.getElementById("block_graph").offsetWidth);
+	*/
 }; 
 
 function showblock() {

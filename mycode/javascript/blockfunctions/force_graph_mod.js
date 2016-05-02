@@ -20,8 +20,44 @@ function Graph(rawdata, id) {
 	this.force;
 	this.svg;
 	this.addr_list = new Map();
-	this.width = document.getElementById(id).clientWidth;
-	this.height = document.getElementById(id).clientHeight;
+	this.width = G_WIDTH;//document.getElementById(id).clientWidth;
+	this.height = G_HEIGHT;//document.getElementById(id).clientHeight;
+	this.edge_len;
+	this.set_width_height = function () {
+		//this.width = document.getElementById(id).clientWidth;
+		//this.height = document.getElementById(id).clientHeight;
+		this.width = $(window).width();//960;
+		this.height = $(window).height() - 50;//600;
+		this.edge_len = Math.max(this.width, this.height);
+	}
+	// parameters of node size
+	this.param_r = new Object();
+	this.param_r["c1"] = 2;
+	this.param_r["c2"] = AMOUNT_UNIT * 100; // 0.01 ~ 100
+	this.param_r["k1"] = AMOUNT_UNIT * 100;
+	this.param_r["k2"] = 1;
+	this.set_param_r = function (c1, c2, k1, k2) {
+		this.param_r["c1"] = c1;
+		this.param_r["c2"] = AMOUNT_UNIT * c2;
+		this.param_r["k1"] = AMOUNT_UNIT * k1;
+		this.param_r["k2"] = k2;
+	}
+}
+
+//[C1, C1 - k1 / C2] = [1, 2]
+// C1 = 2
+// k1 / C2 = 1 => k1 = C2
+// k2 = 1 by default
+Graph.prototype.reg_r = function(x) {
+	// C1 - k1 / (C2 + amount^k2)
+	// console.log(x);
+	var y = this.param_r["c1"] - this.param_r["k1"] / (this.param_r["c2"] + Math.pow(x, this.param_r["k2"]));
+	return y;
+}
+// according to amount of money
+Graph.prototype.node_r = function(d) {
+	//return SIZE_UNIT*Math.sqrt(d.times);
+	return SIZE_UNIT * this.reg_r(d.sum_in);
 }
 
 //function color(d) {
@@ -37,9 +73,11 @@ Graph.prototype.color = function(d) {
 	return color_val;
 }
 
-Graph.prototype.calc_r = function(d) {
+/*
+Graph.prototype.node_r = function(d) {
 	return SIZE_UNIT*Math.sqrt(d.times);
 }
+*/
 
 Graph.prototype.update_distance = function() {
 	graph = this.graph;
@@ -48,12 +86,12 @@ Graph.prototype.update_distance = function() {
 	var r_node_b;
 	for (var i = 0; i < n_links; i++) {
 		if (graph.nodes[graph.links[i].source] != undefined) {
-			r_node_a = this.calc_r(graph.nodes[graph.links[i].source]);
-			r_node_b = this.calc_r(graph.nodes[graph.links[i].target]);
+			r_node_a = this.node_r(graph.nodes[graph.links[i].source]);
+			r_node_b = this.node_r(graph.nodes[graph.links[i].target]);
 		}
 		else {
-			r_node_a = this.calc_r(graph.links[i].source);
-			r_node_b = this.calc_r(graph.links[i].target);
+			r_node_a = this.node_r(graph.links[i].source);
+			r_node_b = this.node_r(graph.links[i].target);
 		}
 		
 		graph.links[i].distance = r_node_a + r_node_b;
@@ -96,16 +134,35 @@ Graph.prototype.init = function() {
 	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
 		sum_in = sum_out = 0;
 		// for each transaction
+		// virtual nodes for payers
+		idx_trans = -1;
+		if (input_list[i].length > 1) {
+			graph.nodes[cnt_node] = 
+				{"name": "transaction "+i, 
+				"addr": i,
+				"sum_in": 0,
+				"sum_out": 0,
+				"times": input_list[i].length, 
+				"amount": [sum_in, sum_out], // sum_in? sum_out?
+				"time": [time_list[i], time_list[i]], "status": [0, 1], "color_val": color_val[i],
+				"type": false // fake address, transaction
+			};
+			idx_trans = cnt_node;
+			cnt_node++;
+		}
 		for (var j = 0; j < input_list[i].length; j++) {
 			// input list (j)
 			sum_in += input_list[i][j].prev_out.value;
 			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
+			// haven't been included yet
 			if (idx_input == undefined) {
 				idx_input = cnt_node;
 				node_addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
 				graph.nodes[cnt_node] = 
 					{"name": input_list[i][j].prev_out.addr, 
 					"addr": input_list[i][j].prev_out.addr, 
+					"sum_in": 0,
+					"sum_out": input_list[i][j].prev_out.value,
 					"times": 1,
 					"amount": [input_list[i][j].prev_out.value], 
 					"time": [time_list[i]], "status": [1], "color_val": color_val[i],
@@ -119,6 +176,7 @@ Graph.prototype.init = function() {
 				graph.nodes[idx_input].time.push(time_list[i]);
 				graph.nodes[idx_input].status.push(1);
 				graph.nodes[idx_input].amount.push(input_list[i][j].prev_out.value);
+				graph.nodes[idx_input].sum_out += input_list[i][j].prev_out.value;
 			}
 		}
 		for (var j = 0; j < output_list[i].length; j++) {
@@ -131,6 +189,8 @@ Graph.prototype.init = function() {
 				graph.nodes[cnt_node] = 
 					{"name": output_list[i][j].addr, 
 					"addr": output_list[i][j].addr, 
+					"sum_in": output_list[i][j].value,
+					"sum_out": 0,
 					"times": 1, 
 					"amount": [output_list[i][j].value],
 					"time": [time_list[i]], "status": [0], "color_val": color_val[i],
@@ -143,21 +203,14 @@ Graph.prototype.init = function() {
 				graph.nodes[idx_output].time.push(time_list[i]);
 				graph.nodes[idx_output].status.push(0);
 				graph.nodes[idx_output].amount.push(output_list[i][j].value);
+				graph.nodes[idx_output].sum_in += output_list[i][j].value;
 			}
 		}
 		// virtual nodes for payers
-		idx_trans = -1;
 		if (input_list[i].length > 1) {
-			graph.nodes[cnt_node] = 
-				{"name": "transaction "+i, 
-				"addr": i,
-				"times": input_list[i].length, 
-				"amount": [sum_in, sum_out], // sum_in? sum_out?
-				"time": [time_list[i], time_list[i]], "status": [0, 1], "color_val": color_val[i],
-				"type": false // fake address, transaction
-			};
-			idx_trans = cnt_node;
-			cnt_node++;
+			graph.nodes[idx_trans].amount =  [sum_in, sum_out];
+			graph.nodes[idx_trans].sum_in = sum_in;
+			graph.nodes[idx_trans].sum_out = sum_out;
 		}
 		// links
 		if (idx_trans != -1) {
@@ -216,7 +269,7 @@ Graph.prototype.update = function () {
 	//var height = this.height / currentZoom;//document.getElementById("block_graph").clientHeight;
 	var width = this.width;
 	var height = this.height;
-	console.log([width, height]);
+	// console.log([width, height]);
 	var offset = 12; 
 	this.update_distance();
 	var force = d3.layout.force()
@@ -226,6 +279,10 @@ Graph.prototype.update = function () {
 				.linkDistance(function(d) {
 					return 30 + d.distance; //d: link
 				})
+				//.linkStrength(0.1)
+				.friction(0.9)
+				//.gravity(0.1)
+				//.theta(0.8)
 				//.alpha(0.1)
 				.size([width, height]);
 
@@ -233,9 +290,16 @@ Graph.prototype.update = function () {
 	var svg = d3.select("#block_graph").append("svg")
 				.attr("width", width)
 				.attr("height", height)
+				.attr("id", "block_graph_svg");
+
+	/*
+	var svg = d3.select("#block_graph").append("svg")
+				.attr("width", width)
+				.attr("height", height)
 				.attr("id", "block_graph_svg") //;
 				.attr("viewBox", "0 0 " + width + " " + height)
 				.attr("preserveAspectRatio", "xMidYMid meet");
+				*/
 	/// A for arrows
 	svg.append("defs").selectAll("marker")
 				.data(["suit", "licensing", "resolved"])
@@ -350,7 +414,7 @@ Graph.prototype.update = function () {
 		//.attr("r", function(d) { return SIZE_UNIT; })
 		.attr("r", function(d) { 
 			//return SIZE_UNIT*Math.sqrt(d.times);
-			return obj.calc_r(d); 
+			return obj.node_r(d); 
 		})
 		.on("click", function(d) {
 			if (d3.event.defaultPrevented) return; // ignore drag
@@ -372,6 +436,8 @@ Graph.prototype.update = function () {
 		.text(function(d) { 
 			return d.name; 
 		});
+	resize();
+	d3.select(window).on("resize", resize);
 	// force.on("tick", tick) // or can be expressed as force.on("tick", function() {
 	function tick() {
 		link.attr("x1", function(d) { return d.source.x; })
@@ -385,8 +451,16 @@ Graph.prototype.update = function () {
 		node.each(collide(0.5)); //Added 
 		/// C
 	}
+	function resize() {
+		obj.set_width_height();
+		//svg.attr("width", obj.width).attr("height", obj.height);
+		//force.size([obj.width, obj.height]).resume();
+		svg.attr("width", obj.edge_len).attr("height", obj.edge_len);
+		force.size([obj.edge_len, obj.edge_len]).resume();
+		//console.log(Math.max(obj.edge_len, obj.edge_len));
+	}
 
-	console.log([document.getElementById("block_graph").clientWidth, document.getElementById("block_graph").clientHeight]);
+	//console.log([document.getElementById("block_graph").clientWidth, document.getElementById("block_graph").clientHeight]);
 	//console.log(node);
 	/*
 	console.log(svg);
@@ -401,10 +475,11 @@ Graph.prototype.update = function () {
 	this.svg = svg;
 }
 
-
+/*
 Graph.prototype.getXandY = function() {
 	var graph = this.graph;
 	console.log(graph.nodes);
 	console.log(graph.nodes[0]);
 	console.log(graph.nodes[1]);
 }
+*/
