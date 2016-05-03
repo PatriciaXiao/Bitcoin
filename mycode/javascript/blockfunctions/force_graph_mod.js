@@ -107,7 +107,9 @@ Graph.prototype.init = function() {
 	// processing data
 	var node_addr_list = this.addr_list;
 	// nodes: nodes shown on screen; links: links shown on screen; 
-	var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": []};
+	// var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": []};
+	this.graph = {"nodes": [], "links": []};
+	var graph = this.graph;
 	var input_list = [];
 	var output_list = [];
 	var color_val = []; // depend on tx_index
@@ -117,7 +119,11 @@ Graph.prototype.init = function() {
 	var idx_link = -1;
 	var sum_in = 0;
 	var sum_out = 0;
-	var idx_trans = -1;
+	var idx_trans = -1; // equivalent to virtual_node_used = false;
+	/////
+	var total_in = 0;
+	var total_out = 0;
+	/////
 	// the first tx
 	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[0].tx[0].out[0].value}}];
 	output_list[0] = rawdata.blocks[0].tx[0].out;
@@ -145,11 +151,15 @@ Graph.prototype.init = function() {
 				"times": input_list[i].length, 
 				"amount": [sum_in, sum_out], // sum_in? sum_out?
 				"time": [time_list[i], time_list[i]], "status": [0, 1], "color_val": color_val[i],
+				"from": [], // from what index of nodes (input), link info
+				"to": [], // to what index of nodes (output)
+				//"idx": cnt_node, // its own index
 				"type": false // fake address, transaction
 			};
 			idx_trans = cnt_node;
 			cnt_node++;
 		}
+
 		for (var j = 0; j < input_list[i].length; j++) {
 			// input list (j)
 			sum_in += input_list[i][j].prev_out.value;
@@ -164,6 +174,9 @@ Graph.prototype.init = function() {
 					"sum_in": 0,
 					"sum_out": input_list[i][j].prev_out.value,
 					"times": 1,
+					"from": [], // from what index of nodes (input), link info
+					"to": [], // to what index of nodes (output)
+					//"idx": cnt_node, // its own index
 					"amount": [input_list[i][j].prev_out.value], 
 					"time": [time_list[i]], "status": [1], "color_val": color_val[i],
 					"type": true // address
@@ -192,6 +205,9 @@ Graph.prototype.init = function() {
 					"sum_in": output_list[i][j].value,
 					"sum_out": 0,
 					"times": 1, 
+					"from": [], // from what index of nodes (input), link info
+					"to": [], // to what index of nodes (output)
+					//"idx": cnt_node, // its own index
 					"amount": [output_list[i][j].value],
 					"time": [time_list[i]], "status": [0], "color_val": color_val[i],
 					"type": true // address
@@ -206,25 +222,37 @@ Graph.prototype.init = function() {
 				graph.nodes[idx_output].sum_in += output_list[i][j].value;
 			}
 		}
+		/*
 		// virtual nodes for payers
 		if (input_list[i].length > 1) {
 			graph.nodes[idx_trans].amount =  [sum_in, sum_out];
 			graph.nodes[idx_trans].sum_in = sum_in;
 			graph.nodes[idx_trans].sum_out = sum_out;
 		}
+		*/
+		total_in += sum_in;
+		total_out += sum_out;
+		// console.log([total_in, total_out]);
 		// links
 		if (idx_trans != -1) {
+			graph.nodes[idx_trans].amount =  [sum_in, sum_out];
+			graph.nodes[idx_trans].sum_in = sum_in;
+			graph.nodes[idx_trans].sum_out = sum_out;
 			// multiple inputs
 			for (var j = 0; j < input_list[i].length; j++) {
 				// input list (j)
 				idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
 				graph.links[cnt_link] = {"source": idx_input, "target": idx_trans, "times": 1, "value": 1, "distance": 0};
+				graph.nodes[idx_input].to.push(idx_trans);
+				graph.nodes[idx_trans].from.push(idx_input);
 				cnt_link++;
 			}
 			for (var j = 0; j < output_list[i].length; j++) {
 				// output list (k)
 				idx_output = node_addr_list.get(output_list[i][j].addr);
 				graph.links[cnt_link] = {"source": idx_trans, "target": idx_output, "times": 1, "value": 1, "distance": 0};
+				graph.nodes[idx_trans].to.push(idx_output);
+				graph.nodes[idx_output].from.push(idx_trans);
 				cnt_link++;
 			}
 		}
@@ -244,6 +272,8 @@ Graph.prototype.init = function() {
 					}
 					if (idx_link == -1) {
 						graph.links[cnt_link] = {"source": idx_input, "target": idx_output, "times": 1, "value": 1, "distance": 0};
+						graph.nodes[idx_input].to.push(idx_output);
+						graph.nodes[idx_output].from.push(idx_input);
 						cnt_link++;
 					}
 					else { // if have been recorded
@@ -254,11 +284,13 @@ Graph.prototype.init = function() {
 		}
 	}
 	/////
+	console.log([total_in, total_out]);
 	// clear the address list
 	//node_addr_list.clear();
 	this.addr_list = node_addr_list;
 	this.graph = graph;
-	this.update(graph);
+	// this.update(graph);
+	this.update();
 	return graph;
 }
 
@@ -272,26 +304,27 @@ Graph.prototype.update = function () {
 	// console.log([width, height]);
 	var offset = 12; 
 	this.update_distance();
-	var force = d3.layout.force()
+	this.force = d3.layout.force()
 				.charge(-60) // -120
 				.chargeDistance(360)
 				//.linkStrength()
 				.linkDistance(function(d) {
 					return 30 + d.distance; //d: link
 				})
-				//.linkStrength(0.1)
+				//.linkStrength(0.8)
 				.friction(0.9)
-				//.gravity(0.1)
+				.gravity(0.06)//.gravity(0.1) // important! make the groups distinguishable
 				//.theta(0.8)
 				//.alpha(0.1)
 				.size([width, height]);
 
 	d3.select("#block_graph_svg").remove();
-	var svg = d3.select("#block_graph").append("svg")
+	this.svg = d3.select("#block_graph").append("svg")
 				.attr("width", width)
 				.attr("height", height)
 				.attr("id", "block_graph_svg");
-
+	var force = this.force;
+	var svg = this.svg;
 	/*
 	var svg = d3.select("#block_graph").append("svg")
 				.attr("width", width)
@@ -355,44 +388,13 @@ Graph.prototype.update = function () {
 	/// C
 	//*/
 	/// H for Highlight
-	//Toggle stores whether the highlighting is on
-	var toggle = 0;
-	//Create an array logging what is connected to what
-	var linkedByIndex = {};
-	for (i = 0; i < graph.nodes.length; i++) {
-		linkedByIndex[i + "," + i] = 1;
-	};
-	graph.links.forEach(function (d) {
-		linkedByIndex[d.source.index + "," + d.target.index] = 1;
-	});
-	//This function looks up whether a pair are neighbours
-	function neighboring(a, b) {
-		return linkedByIndex[a.index + "," + b.index];
-	}
-	function connectedNodes() {
-		if (toggle == 0) {
-			//Reduce the opacity of all but the neighbouring nodes
-			d = d3.select(this).node().__data__;
-			node.style("opacity", function (o) {
-				return neighboring(d, o) | neighboring(o, d) ? 1 : 0.1;
-			});
-			link.style("opacity", function (o) {
-				return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
-			});
-			//Reduce the op
-			toggle = 1;
-		}
-		else {
-			//Put them back to opacity=1
-			node.style("opacity", 1);
-			link.style("opacity", 1);
-			toggle = 0;
-		}
-	} 
+	// preparation
+	// this.pre_highlight_neighbor();
+	this.pre_highlight_chain();
 	/// H
 
 	// set the links
-	var link = svg.selectAll(".link")
+	this.link = svg.selectAll(".link")
 			.data(graph.links)
 			.enter().append("line")
 			.attr("class", "link")
@@ -404,11 +406,13 @@ Graph.prototype.update = function () {
 			});
 	// set the nodes
 
-	var node = svg.selectAll(".node")
+	this.node = svg.selectAll(".node")
 				.data(graph.nodes)
 				.enter().append("g")
 				.attr("class", "node")
 				.call(force.drag);
+	var node = this.node;
+	var link = this.link;
 
 	node.append("circle")
 		//.attr("r", function(d) { return SIZE_UNIT; })
@@ -418,11 +422,26 @@ Graph.prototype.update = function () {
 		})
 		.on("click", function(d) {
 			if (d3.event.defaultPrevented) return; // ignore drag
+			/////
+			
+			console.log("click:" + d.index);
+			console.log("in:");
+			for (var i = 0; i < d.from.length; i++) {
+				console.log(d.from[i]);
+			}
+			console.log("out:");
+			for (var i = 0; i < d.to.length; i++) {
+				console.log(d.to[i]);
+			}
+			/////
 			ShowNodeInfo(d);
 			//update_graph_dat_without_merge(graph);
 		})
 		/// H for highlight
-		.on('dblclick', connectedNodes)//; //Added code 
+		.on('dblclick', function (d) {
+			//obj.connected_neighbor(d, obj);
+			obj.connected_chain(d, obj);
+		})//; //Added code 
 		/// H
 		.style("fill", function(d) { return obj.color(d); });
 
@@ -436,9 +455,10 @@ Graph.prototype.update = function () {
 		.text(function(d) { 
 			return d.name; 
 		});
-	resize();
-	d3.select(window).on("resize", resize);
-	// force.on("tick", tick) // or can be expressed as force.on("tick", function() {
+	/// R for resize ///
+	this.resize();
+	d3.select(window).on("resize", this.resize);
+	/// R ///
 	function tick() {
 		link.attr("x1", function(d) { return d.source.x; })
 			.attr("y1", function(d) { return d.source.y; })
@@ -450,14 +470,6 @@ Graph.prototype.update = function () {
 		/// C for collision detection
 		node.each(collide(0.5)); //Added 
 		/// C
-	}
-	function resize() {
-		obj.set_width_height();
-		//svg.attr("width", obj.width).attr("height", obj.height);
-		//force.size([obj.width, obj.height]).resume();
-		svg.attr("width", obj.edge_len).attr("height", obj.edge_len);
-		force.size([obj.edge_len, obj.edge_len]).resume();
-		//console.log(Math.max(obj.edge_len, obj.edge_len));
 	}
 
 	//console.log([document.getElementById("block_graph").clientWidth, document.getElementById("block_graph").clientHeight]);
@@ -473,13 +485,209 @@ Graph.prototype.update = function () {
 
 	this.force = force;
 	this.svg = svg;
+	this.node = node;
+	this.link = link;
 }
 
+/// H for Highlight
+Graph.prototype.pre_highlight_chain = function() {
+	var obj = this;
+	obj.toggle = 0;
+}
+// RangeError: Maximum call stack size exceeded - endless loop
+// 
+Graph.prototype.chaining = function(idx, type) {
+	// calculate linked elements
+	// console.log([d.index, type]);
+	if (type != "from" && type != "to" && type != "both") {
+		console.log("type unknown");
+		return;
+	}
+	var d = this.graph.nodes[idx];
+	// from
+	// console.log(this.graph.nodes.length);
+	//if (type == "from") {
+	if (type != "to") {
+		for (var i = 0; i < d.from.length; i++) {
+			//console.log(d.from[i]);
+			//console.log(this.chained_nodes);
+			// if (this.chained_nodes[d.from[i]] == true) {
+			if (this.chained_nodes[d.from[i]] == true && this.chained_links[[d.from[i], idx]] == true) {
+				// visited by "from"
+				continue;
+			}
+			this.chained_nodes[d.from[i]] = true;
+			this.chained_links[[d.from[i], idx]] = true;
+			this.chaining(d.from[i], type);
+		}
+	}
+	// to
+	//else if (type == "to") { //!= from
+	if (type != "from") { //!= from
+		//console.log(type);
+		//console.log(d);
+		for (var i = 0; i < d.to.length; i++) {
+			//if (this.chained_nodes[d.to[i]] == true) {
+			if (this.chained_nodes[d.to[i]] == true && this.chained_links[[idx, d.to[i]]] == true) {
+				// visited
+				continue;
+			}
+			this.chained_nodes[d.to[i]] = true;
+			this.chained_links[[idx, d.to[i]]] = true;
+			this.chaining(d.to[i], type);
+		}
+	}
+	/*
+	else if (type == "both") {
+		for (var i = 0; i < d.from.length; i++) {
+			//console.log(d.from[i]);
+			//console.log(this.chained_nodes);
+			// if (this.chained_nodes[d.from[i]] == true) {
+			if (this.chained_nodes[d.from[i]] == true && this.chained_links[[d.from[i], idx]] == true) {
+				// visited by "from"
+				continue;
+			}
+			this.chained_nodes[d.from[i]] = true;
+			this.chained_links[[d.from[i], idx]] = true;
+			this.chaining(d.from[i], type);
+		}
+		for (var i = 0; i < d.to.length; i++) {
+			//if (this.chained_nodes[d.to[i]] == true) {
+			if (this.chained_nodes[d.to[i]] == true && this.chained_links[[idx, d.to[i]]] == true) {
+				// visited
+				continue;
+			}
+			this.chained_nodes[d.to[i]] = true;
+			this.chained_links[[idx, d.to[i]]] = true;
+			this.chaining(d.to[i], type);
+		}
+	}*/
+	// not graph, only chain
+	return;
+}
+Graph.prototype.connected_chain = function (d, obj) {
+	if (obj.toggle == 0) {
+		//Reduce the opacity of all but the chaining nodes
+		this.chained_nodes = new Object();
+		this.chained_links = new Object(); //new Object();
+		for (var i = 0; i < obj.node[0].length; i++) {
+			this.chained_nodes[i] = false;
+		}
+		this.chained_nodes[d.index] = true;
+		var type = "both";//"to";//"from";
+		obj.chaining(d.index, type); // type = "from" / "to" / "both"
+		obj.node.style("opacity", function (o) {
+			// linked together
+			if (obj.chained_nodes[o.index]) {
+				return 1; // highlighted
+			}
+			else {
+				return 0.1; // hide
+			}
+		});
+		obj.link.style("opacity", function (o) {
+			//if (obj.chained_nodes[o.source.index] && obj.chained_nodes[o.target.index]) {
+			if (obj.chained_links[[o.source.index, o.target.index]] == true 
+				|| obj.chained_links[[o.target.index, o.source.index]] == true) {
+				return 1;
+			}
+			else {
+				return 0.1;
+			}
+		});
+		obj.toggle = 1;
+		delete obj.chained_nodes;
+		delete obj.chained_links;
+	}
+	else {
+		//Put them back to opacity=1
+		obj.node.style("opacity", 1);
+		obj.link.style("opacity", 1);
+		obj.toggle = 0;
+	}
+} 
+/////////
+Graph.prototype.pre_highlight_neighbor = function() {
+	//Toggle stores whether the highlighting is on
+	var obj = this;
+	obj.toggle = 0;
+	//Create an array logging what is connected to what
+	this.linkedByIndex = new Object();//{};
+	for (i = 0; i < graph.nodes.length; i++) {
+		this.linkedByIndex[i + "," + i] = 1;
+	};
+	this.graph.links.forEach(function (d) {
+		obj.linkedByIndex[d.source.index + "," + d.target.index] = 1;
+	});
+}
+Graph.prototype.neighboring = function (a, b) {
+	return this.linkedByIndex[a.index + "," + b.index];
+}
+// This function looks up whether a pair are neighbours
 /*
-Graph.prototype.getXandY = function() {
-	var graph = this.graph;
-	console.log(graph.nodes);
-	console.log(graph.nodes[0]);
-	console.log(graph.nodes[1]);
+Graph.prototype.connectedNodes = function (d, obj) {
+	// this = a node
+	if (obj.toggle == 0) {
+	//Reduce the opacity of all but the neighbouring nodes
+		//d = d3.select(this).node().__data__;
+		obj.node.style("opacity", function (o) {
+			return obj.neighboring(d, o) | obj.neighboring(o, d) ? 1 : 0.1;
+		});
+		obj.link.style("opacity", function (o) {
+			return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
+		});
+		//Reduce the op
+		obj.toggle = 1;
+	}
+	else {
+		//Put them back to opacity=1
+		obj.node.style("opacity", 1);
+		obj.link.style("opacity", 1);
+		obj.toggle = 0;
+	}
 }
 */
+Graph.prototype.connected_neighbor = function (d, obj) {
+	// this = graph; if not obj, this = a node
+	// console.log(d); // a node
+	// console.log(d.index); // a node
+	// console.log(obj.node[0].length); amount of nodes
+	// console.log(obj.node[0][0]); // html
+	if (obj.toggle == 0) {
+		//Reduce the opacity of all but the neighbouring nodes
+		obj.node.style("opacity", function (o) {
+			// linked together
+			// console.log(o);
+			if (obj.neighboring(d, o) || obj.neighboring(o, d)) {
+				return 1; // highlighted
+			}
+			else {
+				return 0.1; // hide
+			}
+		});
+		obj.link.style("opacity", function (o) {
+			if (d.index==o.source.index || d.index==o.target.index) {
+				return 1;
+			}
+			else {
+				return 0.1;
+			}
+		});
+		obj.toggle = 1;
+	}
+	else {
+		//Put them back to opacity=1
+		obj.node.style("opacity", 1);
+		obj.link.style("opacity", 1);
+		obj.toggle = 0;
+	}
+} 
+/// highlight
+
+/// R for resize ///
+Graph.prototype.resize = function() {
+	this.set_width_height();
+	this.svg.attr("width", this.edge_len).attr("height", this.edge_len);
+	this.force.size([this.edge_len, this.edge_len]).resume();
+}
+/// R ///
