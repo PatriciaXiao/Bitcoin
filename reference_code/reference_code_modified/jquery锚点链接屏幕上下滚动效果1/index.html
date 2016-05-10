@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<title>jquery锚点链接屏幕上下滚动效果_固定在页面右侧的导航菜单</title>
+
+<link rel="stylesheet" href="icoroll/icomoon/style.css" />
+<link rel="stylesheet" href="icoroll/icoroll.css" />
+<link rel="stylesheet" href="icoroll/dark.css" />
+
+<script src="icoroll/jquery.js"></script>
+<script src="icoroll/icoroll.js"></script>
+
+<!--可无视样式-->
+<style type="text/css">
+*{ margin:0; padding:0;}
+div{ height:500px; color:#fff; font-size:20px;}
+#home{background:#060;}
+#browsers{background:#CF0;}
+#responsive{background:#00F;}
+#colors{ background:#C90;}
+#configuration{background:#3CF;}
+#package{ background:#0C0;}
+#history{background:#F00;}
+#iconmoon{background:#F0F;}
+</style>
+
+<script>
+$(function(){
+	
+	icoroll({
+		links:$('.scroll'),
+		tip_distance:30,
+		back_enabled:true,
+		time:1500
+	},{
+		position:'right',
+		elements:[
+		{ 'class':'icon-home-2','href':'#home','content':'About'},
+		{ 'class':'icon-chrome','href':'#browsers','content':'Browser support'},
+		{ 'class':'icon-mobile','href':'#responsive','content':'Responsive'},
+		{ 'class':'icon-pencil','href':'#colors','content':'Theme change'},
+		{ 'class':'icon-cogs','href':'#configuration','content':'Configurable'},
+		{ 'class':'icon-box-add','href':'#package','content':'Package'},
+		{ 'class':'icon-IcoMoon','href':'#iconmoon','content':'Icomoon'},
+		{ 'class':'icon-arrow-left-2','href':'#history','content':'History'}
+		]
+	});
+	
+});
+</script>
+</head>
+
+<body>
+
+<div id="home">
+
+	<p>home内容</p>
+
+</div>
+<div id="browsers">
+
+	<p>browsers内容</p>
+
+</div>
+
+<div id="responsive">
+
+	<p>responsive内容</p>
+
+</div>
+
+<div id="colors">
+
+	<p>colors内容</p>
+
+</div>
+
+<div id="configuration">
+
+	<p>configuration内容</p>
+
+</div>
+
+<div id="package">
+
+	<p>package内容</p>
+
+</div>
+
+<div id="history">
+
+	<p>history内容</p>
+
+</div>
+
+<div id="iconmoon">
+
+	<p>iconmoon内容</p>
+
+</div>
+
+ 
+<p>
+
+
+</body>
+</html>

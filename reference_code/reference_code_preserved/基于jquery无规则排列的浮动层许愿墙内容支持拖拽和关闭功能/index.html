@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>无标题文档</title>
+
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+<script type="text/javascript" src="js/wish.js"></script>
+
+<style type="text/css">
+#wish{width:970px;height:650px;margin:15px;position:relative;background:#F4F4F4;}
+.wish{width:185px;height:166px;background:url(bw/s1.png) no-repeat 0 0;color:black;padding:10px 20px 30px 20px;border:4px solid #333333;}
+.wish p{white-space:normal;}
+.wish .close{display:block;position:absolute;top:-5px;left:-5px;background:#f60;width:17px;height:17px;display:none;cursor:pointer}
+/*随机选择的便签背景*/
+.s1{background:#ffbbf5;}
+.s2{background:#c3bbff;}
+.s3{background:#cc9966;}
+.s4{background:#99cc66;}
+.s5{background:#cc33cc;} 
+</style>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$('#wish').wish();
+	$('.wish').draggable({
+		containment: "#wish",
+		scroll: true
+	});
+});
+</script>
+
+</head>
+<body>
+
+	<div id="wish">
+		<div>1. text</div>
+		<div>2. text</div>
+		<div>3. text</div>
+		<div>4. text</div>
+		<div>5. text</div>
+		<div>6. text</div>
+		<div>7. text</div>
+		<div>8. text</div>
+		<div>9. text</div>
+		
+		<div>10. text</div>
+		<div>11. text</div>
+		<div>12. text</div>
+		<div>13. text</div>
+		<div>14. text</div>
+		<div>15. text</div>
+		<div>16. text</div>
+		<div>17. text</div>
+		<div>18. text</div>
+		<div>19. text</div>
+		<div>20. text</div>
+	</div>
+
+</body>
+</html>

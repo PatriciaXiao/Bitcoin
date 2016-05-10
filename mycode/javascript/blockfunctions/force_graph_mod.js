@@ -22,19 +22,22 @@ function Graph(rawdata, id) {
 	this.addr_list = new Map();
 	this.width = G_WIDTH;//document.getElementById(id).clientWidth;
 	this.height = G_HEIGHT;//document.getElementById(id).clientHeight;
+	this.graph_w = 0;
+	this.graph_h = 0;
 	this.edge_len;
+	this.padding = 50;
 	this.set_width_height = function () {
 		//this.width = document.getElementById(id).clientWidth;
 		//this.height = document.getElementById(id).clientHeight;
 		this.width = $(window).width();//960;
-		this.height = $(window).height() - 50;//600;
-		this.edge_len = Math.max(this.width, this.height);
+		this.height = $(window).height() - this.padding;//600;
+		this.edge_len = Math.max(this.width, this.height, this.graph_w + this.padding * 2, this.graph_h + this.padding * 2);
 	}
 	// parameters of node size
 	this.param_r = new Object();
-	this.param_r["c1"] = 2;
+	this.param_r["c1"] = 2.2; // 2
 	this.param_r["c2"] = AMOUNT_UNIT * 100; // 0.01 ~ 100
-	this.param_r["k1"] = AMOUNT_UNIT * 100;
+	this.param_r["k1"] = AMOUNT_UNIT * 120; //AMOUNT_UNIT * 100;
 	this.param_r["k2"] = 1;
 	this.set_param_r = function (c1, c2, k1, k2) {
 		this.param_r["c1"] = c1;
@@ -105,7 +108,6 @@ Graph.prototype.update_distance = function() {
 Graph.prototype.init = function() {
 	var rawdata = this.rawdata;
 	// processing data
-	var node_addr_list = this.addr_list;
 	// nodes: nodes shown on screen; links: links shown on screen; 
 	// var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": []};
 	this.graph = {"nodes": [], "links": []};
@@ -163,11 +165,11 @@ Graph.prototype.init = function() {
 		for (var j = 0; j < input_list[i].length; j++) {
 			// input list (j)
 			sum_in += input_list[i][j].prev_out.value;
-			idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
+			idx_input = this.addr_list.get(input_list[i][j].prev_out.addr);
 			// haven't been included yet
 			if (idx_input == undefined) {
 				idx_input = cnt_node;
-				node_addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
+				this.addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
 				graph.nodes[cnt_node] = 
 					{"name": input_list[i][j].prev_out.addr, 
 					"addr": input_list[i][j].prev_out.addr, 
@@ -195,10 +197,10 @@ Graph.prototype.init = function() {
 		for (var j = 0; j < output_list[i].length; j++) {
 			// output list (j)
 			sum_out += output_list[i][j].value;
-			idx_output = node_addr_list.get(output_list[i][j].addr);
+			idx_output = this.addr_list.get(output_list[i][j].addr);
 			if (idx_output == undefined) {
 				idx_output = cnt_node;
-				node_addr_list.put(output_list[i][j].addr, cnt_node);
+				this.addr_list.put(output_list[i][j].addr, cnt_node);
 				graph.nodes[cnt_node] = 
 					{"name": output_list[i][j].addr, 
 					"addr": output_list[i][j].addr, 
@@ -241,7 +243,7 @@ Graph.prototype.init = function() {
 			// multiple inputs
 			for (var j = 0; j < input_list[i].length; j++) {
 				// input list (j)
-				idx_input = node_addr_list.get(input_list[i][j].prev_out.addr);
+				idx_input = this.addr_list.get(input_list[i][j].prev_out.addr);
 				graph.links[cnt_link] = {"source": idx_input, "target": idx_trans, "times": 1, "value": 1, "distance": 0};
 				graph.nodes[idx_input].to.push(idx_trans);
 				graph.nodes[idx_trans].from.push(idx_input);
@@ -249,7 +251,7 @@ Graph.prototype.init = function() {
 			}
 			for (var j = 0; j < output_list[i].length; j++) {
 				// output list (k)
-				idx_output = node_addr_list.get(output_list[i][j].addr);
+				idx_output = this.addr_list.get(output_list[i][j].addr);
 				graph.links[cnt_link] = {"source": idx_trans, "target": idx_output, "times": 1, "value": 1, "distance": 0};
 				graph.nodes[idx_trans].to.push(idx_output);
 				graph.nodes[idx_output].from.push(idx_trans);
@@ -258,10 +260,10 @@ Graph.prototype.init = function() {
 		}
 		else {
 			// one input
-			idx_input = node_addr_list.get(input_list[i][0].prev_out.addr);
+			idx_input = this.addr_list.get(input_list[i][0].prev_out.addr);
 			for (var j = 0; j < output_list[i].length; j++) {
 				// output list (k)
-				idx_output = node_addr_list.get(output_list[i][j].addr);
+				idx_output = this.addr_list.get(output_list[i][j].addr);
 				if (idx_input != idx_output) { // if the input and output links aren't the same
 					idx_link = -1;
 					for (var k = 0; k < cnt_link; k++) {
@@ -284,12 +286,7 @@ Graph.prototype.init = function() {
 		}
 	}
 	/////
-	console.log([total_in, total_out]);
-	// clear the address list
-	//node_addr_list.clear();
-	this.addr_list = node_addr_list;
 	this.graph = graph;
-	// this.update(graph);
 	this.update();
 	return graph;
 }
@@ -311,10 +308,10 @@ Graph.prototype.update = function () {
 				.linkDistance(function(d) {
 					return 30 + d.distance; //d: link
 				})
-				//.linkStrength(0.8)
+				.linkStrength(1) // 0.8
 				.friction(0.9)
-				.gravity(0.06)//.gravity(0.1) // important! make the groups distinguishable
-				//.theta(0.8)
+				.gravity(0.06) //.gravity(0.1) // important! make the groups distinguishable
+				.theta(0.6) //.theta(0.8)
 				//.alpha(0.1)
 				.size([width, height]);
 
@@ -356,37 +353,6 @@ Graph.prototype.update = function () {
 		.on("tick", tick) // debug add
 		.alpha(0.1)
 		.start();
-	
-	/// C for collision detection
-	var padding = 1, // separation between circles
-		radius=8;
-	function collide(alpha) {
-		var quadtree = d3.geom.quadtree(graph.nodes);
-		return function(d) {
-			var rb = 2*radius + padding,
-			nx1 = d.x - rb,
-			nx2 = d.x + rb,
-			ny1 = d.y - rb,
-			ny2 = d.y + rb;
-			quadtree.visit(function(quad, x1, y1, x2, y2) {
-				if (quad.point && (quad.point !== d)) {
-					var x = d.x - quad.point.x,
-					y = d.y - quad.point.y,
-					l = Math.sqrt(x * x + y * y);
-					if (l < rb) {
-						l = (l - rb) / l * alpha;
-						d.x -= x *= l;
-						d.y -= y *= l;
-						quad.point.x += x;
-						quad.point.y += y;
-					}
-				}
-				return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
-			});
-		};
-	}
-	/// C
-	//*/
 	/// H for Highlight
 	// preparation
 	// this.pre_highlight_neighbor();
@@ -415,15 +381,13 @@ Graph.prototype.update = function () {
 	var link = this.link;
 
 	node.append("circle")
-		//.attr("r", function(d) { return SIZE_UNIT; })
 		.attr("r", function(d) { 
-			//return SIZE_UNIT*Math.sqrt(d.times);
 			return obj.node_r(d); 
 		})
 		.on("click", function(d) {
 			if (d3.event.defaultPrevented) return; // ignore drag
 			/////
-			
+			/*
 			console.log("click:" + d.index);
 			console.log("in:");
 			for (var i = 0; i < d.from.length; i++) {
@@ -432,7 +396,7 @@ Graph.prototype.update = function () {
 			console.log("out:");
 			for (var i = 0; i < d.to.length; i++) {
 				console.log(d.to[i]);
-			}
+			}*/
 			/////
 			ShowNodeInfo(d);
 			//update_graph_dat_without_merge(graph);
@@ -446,20 +410,55 @@ Graph.prototype.update = function () {
 		.style("fill", function(d) { return obj.color(d); });
 
 	node.append("title")
-			.text(function(d) { return d.name; });
+			.text(function(d) { 
+				return d.name; 
+			});
 	// show text when hovering over it
 	node.append("svg:text")
 		.attr("class", "nodetext")
 		.attr("dx", offset) //12
 		.attr("dy", offset)
 		.text(function(d) { 
-			return d.name; 
+			//return d.name;
+			return d.sum_in / AMOUNT_UNIT;
 		});
 	/// R for resize ///
+	/*
 	this.resize();
-	d3.select(window).on("resize", this.resize);
+	d3.select(window).on("resize", this.resize);*/
+	this.resize(-1, -1);
+	d3.select(window).on("resize", function () {
+		return obj.resize(-1, -1);
+	});
 	/// R ///
+	// called everytime when the graph stops
+	force.on("end", function(){
+		//console.log(graph.nodes[0].x);
+		var n_nodes = graph.nodes.length;
+		var x_list = [];
+		var y_list = [];
+		for (var i = 0; i < n_nodes; i++) {
+			x_list.push(graph.nodes[i].x);
+			y_list.push(graph.nodes[i].y);
+		}
+		obj.graph_w = obj.getMaxOfArray(x_list)-obj.getMinOfArray(x_list);
+		obj.graph_h = obj.getMaxOfArray(y_list)-obj.getMinOfArray(y_list);
+		console.log([obj.graph_w, obj.graph_h]);
+		// set_width_height ?
+		return obj.resize(obj.graph_w + obj.padding * 2, obj.graph_h + obj.padding * 2);
+		// return obj.resize(-1, -1);
+	});
 	function tick() {
+		/*
+		graph.nodes.forEach(function(d, i){
+			// d: nodes (d.x, d.y could be set)
+			var r = obj.node_r(d);
+			d.x = d.x - r < 0	? r : d.x ;
+			d.x = d.x + r > width ? (width - r) : d.x ;
+			d.y = d.y - r < 0	? r : d.y ;
+			d.y = d.y + r + offset > height ? (height - r - offset) : d.y ;
+		});
+		*/
 		link.attr("x1", function(d) { return d.source.x; })
 			.attr("y1", function(d) { return d.source.y; })
 			.attr("x2", function(d) { return d.target.x; })
@@ -468,7 +467,7 @@ Graph.prototype.update = function () {
 			.attr("cy", function(d) { return d.y; });
 		node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 		/// C for collision detection
-		node.each(collide(0.5)); //Added 
+		node.each(obj.collide(0.6)); //0.5 
 		/// C
 	}
 
@@ -489,13 +488,42 @@ Graph.prototype.update = function () {
 	this.link = link;
 }
 
+/// C for collision detection
+Graph.prototype.collide = function(alpha) {
+	var padding = 1, // separation between circles
+		radius=8;
+	var graph = this.graph;
+	var quadtree = d3.geom.quadtree(graph.nodes);
+	return function(d) {
+		var rb = 2*radius + padding,
+		nx1 = d.x - rb,
+		nx2 = d.x + rb,
+		ny1 = d.y - rb,
+		ny2 = d.y + rb;
+		quadtree.visit(function(quad, x1, y1, x2, y2) {
+			if (quad.point && (quad.point !== d)) {
+				var x = d.x - quad.point.x,
+				y = d.y - quad.point.y,
+				l = Math.sqrt(x * x + y * y);
+				if (l < rb) {
+					l = (l - rb) / l * alpha;
+					d.x -= x *= l;
+					d.y -= y *= l;
+					quad.point.x += x;
+					quad.point.y += y;
+				}
+			}
+			return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+		});
+	};
+}
+/// C
+
 /// H for Highlight
 Graph.prototype.pre_highlight_chain = function() {
 	var obj = this;
 	obj.toggle = 0;
 }
-// RangeError: Maximum call stack size exceeded - endless loop
-// 
 Graph.prototype.chaining = function(idx, type) {
 	// calculate linked elements
 	// console.log([d.index, type]);
@@ -505,13 +533,8 @@ Graph.prototype.chaining = function(idx, type) {
 	}
 	var d = this.graph.nodes[idx];
 	// from
-	// console.log(this.graph.nodes.length);
-	//if (type == "from") {
 	if (type != "to") {
 		for (var i = 0; i < d.from.length; i++) {
-			//console.log(d.from[i]);
-			//console.log(this.chained_nodes);
-			// if (this.chained_nodes[d.from[i]] == true) {
 			if (this.chained_nodes[d.from[i]] == true && this.chained_links[[d.from[i], idx]] == true) {
 				// visited by "from"
 				continue;
@@ -522,10 +545,7 @@ Graph.prototype.chaining = function(idx, type) {
 		}
 	}
 	// to
-	//else if (type == "to") { //!= from
 	if (type != "from") { //!= from
-		//console.log(type);
-		//console.log(d);
 		for (var i = 0; i < d.to.length; i++) {
 			//if (this.chained_nodes[d.to[i]] == true) {
 			if (this.chained_nodes[d.to[i]] == true && this.chained_links[[idx, d.to[i]]] == true) {
@@ -537,32 +557,6 @@ Graph.prototype.chaining = function(idx, type) {
 			this.chaining(d.to[i], type);
 		}
 	}
-	/*
-	else if (type == "both") {
-		for (var i = 0; i < d.from.length; i++) {
-			//console.log(d.from[i]);
-			//console.log(this.chained_nodes);
-			// if (this.chained_nodes[d.from[i]] == true) {
-			if (this.chained_nodes[d.from[i]] == true && this.chained_links[[d.from[i], idx]] == true) {
-				// visited by "from"
-				continue;
-			}
-			this.chained_nodes[d.from[i]] = true;
-			this.chained_links[[d.from[i], idx]] = true;
-			this.chaining(d.from[i], type);
-		}
-		for (var i = 0; i < d.to.length; i++) {
-			//if (this.chained_nodes[d.to[i]] == true) {
-			if (this.chained_nodes[d.to[i]] == true && this.chained_links[[idx, d.to[i]]] == true) {
-				// visited
-				continue;
-			}
-			this.chained_nodes[d.to[i]] = true;
-			this.chained_links[[idx, d.to[i]]] = true;
-			this.chaining(d.to[i], type);
-		}
-	}*/
-	// not graph, only chain
 	return;
 }
 Graph.prototype.connected_chain = function (d, obj) {
@@ -648,16 +642,10 @@ Graph.prototype.connectedNodes = function (d, obj) {
 }
 */
 Graph.prototype.connected_neighbor = function (d, obj) {
-	// this = graph; if not obj, this = a node
-	// console.log(d); // a node
-	// console.log(d.index); // a node
-	// console.log(obj.node[0].length); amount of nodes
-	// console.log(obj.node[0][0]); // html
 	if (obj.toggle == 0) {
 		//Reduce the opacity of all but the neighbouring nodes
 		obj.node.style("opacity", function (o) {
 			// linked together
-			// console.log(o);
 			if (obj.neighboring(d, o) || obj.neighboring(o, d)) {
 				return 1; // highlighted
 			}
@@ -685,9 +673,22 @@ Graph.prototype.connected_neighbor = function (d, obj) {
 /// highlight
 
 /// R for resize ///
-Graph.prototype.resize = function() {
-	this.set_width_height();
-	this.svg.attr("width", this.edge_len).attr("height", this.edge_len);
-	this.force.size([this.edge_len, this.edge_len]).resume();
+Graph.prototype.resize = function(new_w, new_h) {
+	if (new_w < 0 || new_h < 0) {
+		this.set_width_height();
+		new_w = this.edge_len;
+		new_h = this.edge_len;
+	}
+	this.svg.attr("width", new_w).attr("height", new_h);
+	this.force.size([new_w, new_h]).resume();
 }
 /// R ///
+
+/// M for math ///
+Graph.prototype.getMaxOfArray = function(numArray) {
+	return Math.max.apply(null, numArray);
+}
+Graph.prototype.getMinOfArray = function(numArray) {
+	return Math.min.apply(null, numArray);
+}
+/// M

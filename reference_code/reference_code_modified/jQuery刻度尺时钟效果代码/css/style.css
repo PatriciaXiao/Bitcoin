@@ -1,0 +1,12 @@
+body{background:#bae1ea url(../images/back.jpg) 50% 0px no-repeat;color:#000;}
+/* wrap */
+#wrap{position:relative;margin: 100px auto 0;width:700px;height:440px;background:url("../images/slider clock(trans).png") no-repeat top left;border-style:solid;border-width:1px;overflow:hidden;}
+#wrap div{position:absolute;margin-left:-700px;width:1400px;height:40px;background:url("../images/slider clock(trans).png") repeat-x;} 
+#wrap #day{top:40px;background-position:0 -440px;}
+#wrap #month{top:120px;background-position:0 -480px;}
+#wrap #date{top:200px;background-position:0 -520px;}
+#wrap #hour{top:280px;background-position:0 -560px;}
+#wrap #min{top:320px;background-position:0 -600px;}
+#wrap #sec{top:400px;background-position:0 -640px;}
+#title{margin:20px auto;width:550px;text-align:center;}
+#other{margin:10px auto;width:550px;text-align:center;}
