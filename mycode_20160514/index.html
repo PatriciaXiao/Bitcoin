@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">	
+		<title>Bitcoin Demo V1.6</title>
+		<link rel="stylesheet"
+			  href="css/bootstrap.css"
+			/>
+		<link rel="stylesheet"
+			  href="css/styles.css"
+			/>
+		<link rel="stylesheet"
+			  href="css/jquery-ui.css"
+			/>
+		<link rel="shortcut icon" href="image/favicon.ico" />
+		<script type="text/javascript" src = "./javascript/lib/jquery-2.2.1.js"></script>
+		<script type="text/javascript" src = "./javascript/lib/jquery-ui.js"> </script>
+		<script type="text/javascript" src = "./javascript/lib/d3.js"></script>
+		<script type="text/javascript" src = "./javascript/lib/bootstrap.js"></script>
+
+		<script type="text/javascript" src = "./javascript/lib/stl_map.js"></script>
+		<script type="text/javascript" src = "./javascript/lib/stl_drag.js"></script>
+
+		<script type="text/javascript" src = "./javascript/blockfunctions/force_graph_mod.js"></script>
+		<script type="text/javascript" src = "./javascript/blockfunctions/block_global.js"></script>
+		<!--script type="text/javascript" src = "./javascript/blockfunctions/blockfunc_merge_addr.js"></script>
+		<script type="text/javascript" src = "./javascript/blockfunctions/blockfunc_no_merge_addr.js"></script>
+
+		<script type="text/javascript" src = "./javascript/barchart/barchart_basic.js"></script-->
+
+
+	</head>
+	<body align = "center">
+		<!--nav class="navbar navbar-default navbar-static-top" role="navigation"-->
+		<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+			<div class="navbar-header">
+				<button type="btn btn-responsive-nav btn-inverse" class="navbar-toggle" data-toggle="collapse" data-target="#bitcoin-navbar-collapse">
+				<span class="sr-only">Switch Navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="#">Bitcoin</a>
+				<!--p class="navbar-text"> History Transaction </p-->
+			</div>
+			<div class="collapse navbar-collapse" id="bitcoin-navbar-collapse">
+				<ul class="nav navbar-nav navbar-right hidden-sm">
+					<!--button type="button" class="btn btn-default navbar-btn toggle-sidebar">
+						Toggle Sidebar
+					</button-->
+
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+							Links <b class="caret"></b>
+						</a>
+						<ul class="dropdown-menu">
+							<li><a href="https://blockchain.info/api">API</a></li>
+							<li><a href="https://blockchain.info/api/blockchain_api">Data API</li>
+							<li><a href="http://www.coindesk.com/api/">Cash</a></li>
+							<li class="divider"></li>
+							<li><a href="http://vis.pku.edu.cn/Transaction/">Demo: Real-Time</a></li>
+							<li><a href="http://vis.pku.edu.cn/bitcointransaction/">Demo: Geographic</a></li>
+							<li class="divider"></li>
+							<li><a href="http://vis.pku.edu.cn/wiki/visgroup/projects/tradevis/start">About Us</a></li>
+						</ul>
+					</li>
+
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+							Options <b class="caret"></b>
+						</a>
+						<ul class="dropdown-menu">
+							<li>
+								&nbsp;
+								<input type="checkbox" id="toggle-sidebar" onchange="ToggleSiderbar(this);">
+									Toggle Sidebar
+								</lnput>
+							</li>
+							<li class="divider"></li>
+							<li>
+								&nbsp;
+								<input type="checkbox" id="whole_graph" onchange="WholeGraph();">
+									Whole Graph
+								</lnput>
+							</li>							
+							<!--li><a href="https://blockchain.info/api/blockchain_api">Data API</li>
+							<li><a href="http://www.coindesk.com/api/">Cash</a></li>
+							<li class="divider"></li>
+							<li><a href="http://vis.pku.edu.cn/Transaction/">Demo: Real-Time</a></li>
+							<li><a href="http://vis.pku.edu.cn/bitcointransaction/">Demo: Geographic</a></li>
+							<li class="divider"></li>
+							<li><a href="http://vis.pku.edu.cn/wiki/visgroup/projects/tradevis/start">About Us</a></li-->
+						</ul>
+					</li>
+
+				</ul>
+			</div>
+		</nav>
+
+		<!--div class="container-fluid"-->
+		<!--div class="container"-->
+			<!--div id = "graph_content" class = "block_canvas">
+				<div id = "block_graph">
+				</div>
+			</div-->
+			<div id = "block_graph" class = "block_canvas">
+				
+				<div class="box" id="block_description">
+					<h3 class="title" id = "block_description_title" >Block Description</h3>
+					<table class="table-hover" border="0" cellpadding="0" cellspacing="0">
+						<tr>
+							<td colspan="3">
+								<p class="info_square">
+									<label>Block Height:
+										<br>
+										<input type = "text" name = "block_height" id = "block_height">
+										<input type = "button" id = "submit" name = "submit" value = "Submit" onclick = "showblock();"/>
+									</label>
+									<span>/* for temp use: debug*/</span>
+								</p>
+							<td>
+						</tr>
+						<tr>
+							<td>
+								<img height="20" width="auto" src="./image/icon_id.png">
+							</td>
+							<th align="right">
+								<span>height:</span>
+							</th>
+							<td align="left">
+								<span id = "block_description_height">undefined</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<img height="20" width="auto" src="./image/icon_bitcoin.png">
+							</td>
+							<th align="right">
+								<span>fee:</span>
+							</th>
+							<td align="left">
+								<span id = "block_description_fee">0.0000000000000000</span>
+								<span style="font-weight:bold;">B</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<img height="20" width="auto" src="./image/icon_trans.png">
+							</td>
+							<th align="right">
+								<span>num_tx:</span>
+							</th>
+							<td align="left">
+								<span id = "block_description_ntx">0</span>
+							</td>
+						</tr>
+						<tr>
+							<!--td rowspan="2"-->
+							<td>
+								<img height="20" width="auto" src="./image/icon_clock.png">
+							</td>
+							<th align="right">
+								<span>date:</span>
+							</th>
+							<td align="left">
+								<span id = "block_description_year">year</span>
+								<span style="font-weight:bold;">/</span>
+								<span id = "block_description_mon">mon</span>
+								<span style="font-weight:bold;">/</span>
+								<span id = "block_description_date">dt</span>
+								&nbsp;
+								<span id = "block_description_day">DAY</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td></td>
+							<th align="right">
+								<span>time:</span>
+							</th>
+							<td align="left">
+								<span id = "block_description_hour">hh</span>
+								<span style="font-weight:bold;">:</span>
+								<span id = "block_description_min">mm</span>
+								<span style="font-weight:bold;">:</span>
+								<span id = "block_description_sec">ss</span>
+								&nbsp;
+								<span style="font-weight:bold;">UTC</span>
+							</td>
+						</tr>
+
+					</table>
+				</div>
+
+
+				<div class="box" id="node_description">
+					<h3 class="title" id = "node_description_title" >Node Description</h3>
+					<table class="table-hover" border="0" cellpadding="0" cellspacing="0">
+						<tr>
+							<td>
+								<img height="20" width="auto" src="./image/icon_id.png">
+							</td>
+							<th align="right">
+								<span>id:</span>
+							</th>
+							<td align="left">
+								<span id = "node_description_id">undefined</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<img height="20" width="auto" src="./image/icon_bitcoin.png">
+							</td>
+							<th align="right">
+								<span>sum_in:</span>
+							</th>
+							<td align="left">
+								<span id = "node_description_coin_in">undefined</span>
+								<span style="font-weight:bold;">B</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+							</td>
+							<th align="right">
+								<span>sum_out:</span>
+							</th>
+							<td align="left">
+								<span id = "node_description_coin_out">undefined</span>
+								<span style="font-weight:bold;">B</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<img height="20" width="auto" src="./image/icon_trans.png">
+							</td>
+							<th align="right">
+								<span>num_tx:</span>
+							</th>
+							<td align="left">
+								<span id = "node_description_ntx">0</span>
+							</td>
+						</tr>
+						<!--tr>
+							<td>
+								<img height="20" width="auto" src="./image/icon_clock.png">
+							</td>
+							<th align="right">
+								<span>date:</span>
+							</th>
+							<td align="left">
+								<span id = "block_description_year">year</span>
+								<span style="font-weight:bold;">/</span>
+								<span id = "block_description_mon">mon</span>
+								<span style="font-weight:bold;">/</span>
+								<span id = "block_description_date">dt</span>
+								&nbsp;
+								<span id = "block_description_day">DAY</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td></td>
+							<th align="right">
+								<span>time:</span>
+							</th>
+							<td align="left">
+								<span id = "block_description_hour">hh</span>
+								<span style="font-weight:bold;">:</span>
+								<span id = "block_description_min">mm</span>
+								<span style="font-weight:bold;">:</span>
+								<span id = "block_description_sec">ss</span>
+								&nbsp;
+								<span style="font-weight:bold;">UTC</span>
+							</td>
+						</tr-->
+
+					</table>
+				</div>
+				
+<!--div class="box">
+	<h3 class="title" id = "title">Title1</h3>
+	<table  border="1">
+		<tr>
+			<th></th>
+			<th>Savings</th>
+			<td>
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<td><span>$</span><span id = "bitcoin_sum">100.000000000000000000</span></td>
+		</tr>
+		<tr>
+			<td>
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<td>$80</td>
+		</tr>
+	</table>
+	<table>
+		<tr>
+			<td>
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<th>Name</th>
+			<td>Bill Gates</td>
+		</tr>
+		<tr>
+			<td rowspan="2">
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<th rowspan="2">Tell</th>
+			<td>555 77 854</td>
+		</tr>
+		<tr>
+			<td>555 77 855</td>
+		</tr>
+	</table>
+</div-->
+
+
+			</div>
+
+
+
+
+			<!--p align = "left">
+				<label for="amount">Value: </label>
+				<input type="text" id="amount" style="border:0;color:#f6931f;font-weight:bold;">
+			</p-->
+
+			<div id = "graph_sidebar" class = "detial_blocks">
+				<div id = "detail_info">	
+					<div id="node_description" align="left"> 
+						<!--p id = "block_basic_info" class="info_square outlined_square">
+							block: undefined
+						</p-->
+						<p id = "node_description_addr" style="width:100%;height:52px;overflow:auto;" class = "outlined_square">
+							address: unselected
+						</p>
+						<!--hr></hr-->
+						<p id = "node_description_time" class="info_square outlined_square">
+							time: undefined
+						</p>
+						<!--hr></hr-->
+						<p id = "node_description_value" class="info_square outlined_square">
+							value: undefined
+						</p>
+					</div>
+				<!--/div-->
+			</div>
+			<!--hr></hr-->
+			<div class = "row">
+				<div class = "col-md-12" >
+					<div id="block_slider" style="width:100%;height:100%;overflow:auto;padding:5px;"></div>
+				</div>
+			</div>
+		<!--hr></hr-->
+		<!--/div-->
+	</body>
+</html>

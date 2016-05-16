@@ -25,6 +25,8 @@ var LIST_LEN_THRESHOLD = 8;
 //var UP_DOWN_SCROLL_STYLE = "width:100%;height:70px;overflow:auto;padding:1px;";
 var DATE_TYPE = 1;//0;
 
+var GRAPH;
+
 /* js could be loaded dynamically this way:
  * however after examine others' code carefully I didn't see any necessarity of doing such things
  */
@@ -60,7 +62,7 @@ document.head.appendChild(new_element);
     $("#amount").val( $( "#slider-vertical" ).slider( "value" ) );
   });
 */
-/*
+
 $(document).ready(function(){
 	var iframeHeight = function () {
 		var _height = $(window).height() - 50;
@@ -71,8 +73,8 @@ $(document).ready(function(){
 		iframeHeight();
 	});
 });
-*/
 
+/*
 $(document).ready(function(){
 	var iframeHeight = function () {
 		var _height = G_HEIGHT;
@@ -83,90 +85,116 @@ $(document).ready(function(){
 		iframeHeight();
 	});
 });
+*/
 
-var GRAPH;
 /* functions */
 // the entrance of drawing the block
+/*
 document.onreadystatechange = function () {
-	/*
+	console.log("on ready state change\n");
+	
 	console.log(document.getElementById("block_graph").clientWidth);
 	console.log(document.getElementById("block_graph").clientHeight);
 	console.log(document.getElementById("block_graph").scrollLeft);
 	console.log(document.getElementById("block_graph").scrollWidth);
 	console.log(document.getElementById("block_graph").offsetWidth);
-	*/
+	
 }; 
+*/
+///////////////////////
+function PrefixNumber(num, length) {
+ return (Array(length).join('0') + num).slice(-length);
+}
+//应用
+window.onload = function ()
+{
+	var block_selection_bar = document.getElementById("block_selection");
+	var block_selection_title = block_selection_bar.getElementsByTagName("h3")[0];
+	var block_selection_drag = new Drag(block_selection_bar, {handle:block_selection_title, limit:true});
+	block_selection_bar.style.left = 0;
+	block_selection_bar.style.top = "300px";
+
+	/*
+	block_selection_drag.onMove = function ()
+	{
+		console.log("left:" + this.drag.offsetLeft + ", top:" + this.drag.offsetTop);
+	};//*/
+
+	var block_description_bar = document.getElementById("block_description");
+	var block_description_title = block_description_bar.getElementsByTagName("h3")[0];
+	var block_description_drag = new Drag(block_description_bar, {handle:block_description_title, limit:true});
+	block_description_bar.style.left = 0;//randX;
+	block_description_bar.style.top = 0;
+
+	var node_description_bar = document.getElementById("node_description");
+	var node_description_title = node_description_bar.getElementsByTagName("h3")[0];
+	var node_description_drag = new Drag(node_description_bar, {handle:node_description_title, limit:true});
+	node_description_bar.style.left = 0;//randX;
+	node_description_bar.style.top = "150px";
+};
+//////////
+
 
 function showblock() {
+	// reset
+	whole_graph.checked = false;
+
 	var goal_block = block_height.value;
 	var goal_file = FILE_DIR + goal_block + ".json";
-	var block_view = $("input[name='block_view_type']:checked").val();
-	var graph;
-	var bar_chart;
-	var ADDR_LIST = new Map();
+
+	//var block_view = $("input[name='block_view_type']:checked").val();
+
 	d3.json(goal_file, function(error, rawdata) {
 		if (error) throw error;
 		ShowBlockInfo(rawdata);
-		// testing
 		GRAPH = new Graph(rawdata, "block_graph");
 		GRAPH.init();
-		//GRAPH.getXandY();
-		//console.log(block_view);
-		/*
-		if(block_view == "merge") {
-			//RAW_DATA = rawdata;
-			//GRAPH_DAT = init_graph_data(rawdata);
-			graph = init_graph_data(rawdata, ADDR_LIST);
-			//update(graph);			
-		}
-		else if (block_view == "no_merge") {
-			// no_merge
-			//graph = showblock_without_merge(rawdata);
-			graph = init_graph_data_without_merge(rawdata);
-			//update_without_merge(graph);
-		}
-		else {
-			// module
-			console.log(block_view);
-			GRAPH = new Graph(rawdata);
-			GRAPH.init();
-		}
-		// show details
-		bar_chart = bar_chart_data(rawdata);
-		//showbarchart_basic(bar_chart);
-		*/
 	});
 }
 
 function ToggleSiderbar(elem) {
-	$("#graph_sidebar").toggle(1000);
-	/*
-	if (elem.checked == true) {
-		console.log("checked")
-		//$("#graph_sidebar").toggleClass("collapsed");
-		$("#graph_sidebar").toggle(1000);
+	//console.log(elem.id);
+	switch (elem.id) {
+		case "toggle_block_sel": $("#block_selection").toggle(1000); break;
+		case "toggle_block_desc": $("#block_description").toggle(1000); break;
+		case "toggle_node_desc": $("#node_description").toggle(1000); break;
+		default: console.log("unknown id: " + elem.id); break;
 	}
-	else {
-		console.log("unchecked")
-		//$("#graph_sidebar").toggleClass("expanded");
-	}
-	*/
 }
 
-/*$(document).ready(function () {
-	$(".toggle-sidebar").click(function () {
-		$("#graph_sidebar").toggleClass("collapsed");
-	});
-	
-});*/
+function WholeGraph() {
+	if (GRAPH == undefined) {
+		console.log("error: please select a graph first");
+	}
+	else {
+		// GRAPH.resize(0);
+		// console.log(whole_graph.checked);
+		if (whole_graph.checked) {
+			GRAPH.resize(1);
+		}
+		else {
+			// unchecked
+			GRAPH.resize(-1);
+		}
+	}
+	return;
+}
 
+var MonthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function getMonthStr(mon) {
+	return MonthName[mon];
+}
+var DayName = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function getDayStr(day) {
+	return DayName[day];
+}
 
 // time-stamp
 // reference: http://www.cnblogs.com/yjf512/p/3796229.html
 function formatDate(now, type) { // type 0: newDate.toGMTString(), type 1:
 	var newDate = new Date();
 	newDate.setTime(now * 1000);
-	var DateString = "";
+	var DateString;
 	switch (type) {
 		case 0:
 			// Wed Jun 18 2014 
@@ -176,9 +204,10 @@ function formatDate(now, type) { // type 0: newDate.toGMTString(), type 1:
 			DateString = newDate.toGMTString();
 			break;
 		case 1:
+			DateString = "";
 			var UTC_date = newDate.getUTCDate(); // int 1~31, in a month
 			var UTC_day = newDate.getUTCDay(); // 0~6, 0 for sunday, 1 for monday, etc.
-			var UTC_mon = newDate.getUTCMonth(); // month
+			var UTC_mon = newDate.getUTCMonth(); // month, 0 for Jan, 11 for Dec
 			var UTC_year = newDate.getUTCFullYear();
 			var UTC_hour = newDate.getUTCHours();
 			// dateObj.getUTCMilliseconds()
@@ -186,7 +215,17 @@ function formatDate(now, type) { // type 0: newDate.toGMTString(), type 1:
 			var UTC_sec = newDate.getUTCSeconds();
 			DateString = UTC_year+"/"+UTC_mon+"/"+UTC_date+" "+UTC_hour+":"+UTC_min+":"+UTC_sec;
 			break;
-		//case 2:
+		case 2:
+			//
+			var UTC_date = newDate.getUTCDate(); // int 1~31, in a month
+			var UTC_day = newDate.getUTCDay(); // 0~6, 0 for sunday, 1 for monday, etc.
+			var UTC_mon = newDate.getUTCMonth(); // month, 0 for Jan, 11 for Dec
+			var UTC_year = newDate.getUTCFullYear();
+			var UTC_hour = newDate.getUTCHours();
+			var UTC_min = newDate.getUTCMinutes();
+			var UTC_sec = newDate.getUTCSeconds();
+			DateString = [UTC_year, UTC_mon, UTC_date, UTC_day, UTC_hour, UTC_min, UTC_sec];
+			break;
 		default: 
 			DateString = "Unknown type";
 			break;
@@ -232,45 +271,32 @@ function PrintValueList(time, amount) {
 }
 
 function ShowNodeInfo(d) {
-	var list_description_addr = document.getElementById("node_description_addr");
-	var list_description_time = document.getElementById("node_description_time");
-	var list_description_value = document.getElementById("node_description_value");
-	/*
-	if(d.time.length <= LIST_LEN_THRESHOLD) {
-		list_description_time.setAttribute("style", "");
-		list_description_value.setAttribute("style", "");
-	}
-	else {
-		list_description_time.setAttribute("style", UP_DOWN_SCROLL_STYLE);
-		list_description_value.setAttribute("style", UP_DOWN_SCROLL_STYLE);
-	}
-	*/
-	list_description_addr.innerHTML = "address: "+d.addr;
-	list_description_time.innerHTML = "time: <br>" + PrintDateList(d.time, d.status);
-	list_description_value.innerHTML = "value: <br>" + PrintValueList(d.time, d.amount);
+	var sum_in = d.sum_out / AMOUNT_UNIT;
+	var sum_out = d.sum_in / AMOUNT_UNIT;
+	document.getElementById("node_description_id").innerHTML = d.name;
+	document.getElementById("node_description_coin_out").innerHTML = sum_out.toPrecision(16);
+	document.getElementById("node_description_coin_in").innerHTML = sum_in.toPrecision(16);
+	document.getElementById("node_description_time").innerHTML = PrintDateList(d.time, d.status);
+	document.getElementById("node_description_trans").innerHTML = PrintValueList(d.time, d.amount);
 }
 
 function ShowBlockInfo(rawdata) {
-	var list_description_block = document.getElementById("block_basic_info");
-	var block_hash = rawdata.blocks[0].hash;
-	var block_time = rawdata.blocks[0].time;
-	var block_fee = rawdata.blocks[0].fee;
+	///
+	var block_height = rawdata.blocks[0].height;
+	var block_fee = rawdata.blocks[0].fee / AMOUNT_UNIT;
+	block_fee = parseFloat(block_fee.toFixed(8));
 	var block_n_tx = rawdata.blocks[0].n_tx;
-	var block_time_type = "";
-	if (DATE_TYPE == 0) {
-		block_time_type = "GMT";
-	}
-	else if (DATE_TYPE == 1) {
-		block_time_type = "UTC";
-	}
-	else {
-		block_time_type = "unknown";
-	}
-	list_description_block.innerHTML = 
-		"Block info:" + "<br>"
-		+"hash: "+block_hash+"<br>"
-		+"time: "+formatDate(block_time, DATE_TYPE)+"<br>"
-		+"fee: "+block_fee+"<br>"
-		+"number of transactions: "+block_n_tx+"<br>"
-		+"time format: "+block_time_type;
+	var block_time = rawdata.blocks[0].time;
+	var block_time_array = formatDate(block_time, 2);
+	document.getElementById("block_description_height").innerHTML = block_height;
+	document.getElementById("block_description_fee").innerHTML = block_fee.toPrecision(16);//PrefixNumber(block_fee, 20);
+	document.getElementById("block_description_ntx").innerHTML = block_n_tx;
+	document.getElementById("block_description_year").innerHTML = PrefixNumber(block_time_array[0], 4);
+	document.getElementById("block_description_mon").innerHTML = getMonthStr(block_time_array[1]);
+	document.getElementById("block_description_date").innerHTML = PrefixNumber(block_time_array[2], 2);
+	document.getElementById("block_description_day").innerHTML = getDayStr(block_time_array[3]);
+	document.getElementById("block_description_hour").innerHTML = PrefixNumber(block_time_array[4], 2);
+	document.getElementById("block_description_min").innerHTML = PrefixNumber(block_time_array[5], 2);
+	document.getElementById("block_description_sec").innerHTML = PrefixNumber(block_time_array[6], 2);
+	//var block_hash = rawdata.blocks[0].hash;
 }

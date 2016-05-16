@@ -6,9 +6,11 @@
 <style type="text/css">
 div,h2,p{margin:0;padding:0;}
 body{font:14px/1.5 arial;}
-#box{width:100px;height:100px;background:#fef4eb;padding:5px;margin:50px;border:1px solid #f60;}
-#box .title{height:25px;background:#f60;}
+.box{width:150px;height:auto;background:#ffffff;padding:2px;margin:50px;border:1px solid #aaa; opacity: 0.8;}
+.box .title{height:27px;background:#aaa;text-align: center;}
 #tool{margin-bottom:10px;}
+table { border: 0;table-layout:fixed; word-break: break-all; word-wrap: break-word; }
+
 </style>
 <script type="text/javascript">
 function Drag()
@@ -32,6 +34,7 @@ Drag.prototype = {
 		
 		this.maxTop = Math.max(this.maxContainer.clientHeight, this.maxContainer.scrollHeight) - this.drag.offsetHeight;
 		this.maxLeft = Math.max(this.maxContainer.clientWidth, this.maxContainer.scrollWidth) - this.drag.offsetWidth;
+		//console.log([this.maxLeft, this.maxContainer.clientWidth, this.maxContainer.scrollWidth, this.drag.offsetWidth]);
 		
 		this.limit = this.options.limit;
 		this.lockX = this.options.lockX;
@@ -146,10 +149,25 @@ Drag.prototype = {
 //应用
 window.onload = function ()
 {
-	var oBox = document.getElementById("box");	
+	var oBox = document.getElementsByClassName("box")[0];	
 	var oTitle = oBox.getElementsByTagName("h2")[0];
 	var oSpan = document.getElementsByTagName("span")[0];
 	var oDrag = new Drag(oBox, {handle:oTitle, limit:false});
+
+	///
+	var oBox1 = document.getElementsByClassName("box")[1];	
+	var oTitle1 = oBox1.getElementsByTagName("h2")[0];
+	var oSpan1 = document.getElementsByTagName("span")[0];
+	var oDrag1 = new Drag(oBox1, {handle:oTitle1, limit:true});
+
+    var num = 12345678.12345678;
+	document.getElementById("bitcoin_sum").innerHTML = num.toPrecision(10);
+	/*
+	var num = 120000.321;
+	var rs3=num.toPrecision(3);
+	console.log(rs3);
+	*/
+	///*/
 	
 	var aInput = document.getElementsByTagName("input");
 	
@@ -209,8 +227,49 @@ window.onload = function ()
     <input type="button" value="锁定位置" />
 </div>
 <p>拖放状态：<span>未开始</span></p>
-<div id="box">
-	<h2 class="title"></h2>
+<div class="box">
+	<h2 class="title">Title</h2>
+	<span>Content</span>
+</div>
+<div class="box">
+	<h2 class="title">Title1</h2>
+	<table>
+		<tr>
+			<th></th>
+			<th>Savings</th>
+		</tr>
+		<tr>
+			<td>
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<td><span>$</span><span id = "bitcoin_sum">100.000000000000000000</span></td>
+		</tr>
+		<tr>
+			<td>
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<td>$80</td>
+		</tr>
+	</table>
+	<table>
+		<tr>
+			<td>
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<th>Name</th>
+			<td>Bill Gates</td>
+		</tr>
+		<tr>
+			<td rowspan="2">
+				<img ng-src="example.png"  height="20" width="auto" src="example.png">
+			</td>
+			<th rowspan="2">Tell</th>
+			<td>555 77 854</td>
+		</tr>
+		<tr>
+			<td>555 77 855</td>
+		</tr>
+	</table>
 </div>
 </body>
 </html>
