@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>jQuery浮动层点击图标按钮关闭或展开</title>
+<meta name="description" content="jquery浮动层点击图标按钮关闭滑动提示浮动层，或展开滑动提示浮动层。一般用于网站的文字提示信息浮动层。" />
+</head>
+
+<body>
+
+<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+
+    function anim(duration){
+        $('#mint').animate(
+            {height: 'toggle'},
+            {duration: duration}
+        );
+    }
+
+    $('#closebtn').click(function() {
+        $('#mintbar').slideUp();
+        anim(600);
+    });
+
+    $('#mint').click(function() {
+        anim(600);
+        $('#mintbar').slideDown('slow');
+    });
+	
+});
+</script>
+
+<style type="text/css">
+*{margin:0;padding:0;list-style-type:none;}
+a,img{border:0;}
+
+#mintbar{background:url('images/bg1.png') repeat-x;font-size:14px;font-family:Arial,Helvetica,Sans-serif;color:#FFF;padding:0;position:relative;top:0;left:0;z-index:2000;width:100%;text-align:center;height:40px;}
+#mintbar div{position:relative;margin:0 auto;padding-top:10px;width:960px;height:30px;}
+#mintbar div h2{float:left;font-size:16px;}
+#closebtn{float:right;}
+#mint{cursor:pointer;position:relative;z-index:1000;}
+</style>
+
+<div id="mintbar">
+	<div>
+		<h2>jquery 浮动层点击关闭滑动显示展开图标</h2>
+		<a id="closebtn" href="#"><img src="images/close.png" /></a>
+	</div>
+</div>
+<div id="mint" style="display:none;position:absolute;top:0;right:10px;"><img src="images/ribbon1.png" alt="丝带"/></div>
+
+</body>
+</html>

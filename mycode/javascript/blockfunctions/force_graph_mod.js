@@ -152,8 +152,7 @@ Graph.prototype.click_node = function(d) {
 Graph.prototype.init = function() {
 	var rawdata = this.rawdata;
 	// processing data
-	// nodes: nodes shown on screen; links: links shown on screen; 
-	// var graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": []};
+	// nodes: nodes shown on screen; links: links shown on screen;
 	this.graph = {"nodes": [], "links": [], "init_nodes": [], "init_links": [], "child_nodes": [], "child_links": []};
 	var graph = this.graph;
 	var input_list = [];
@@ -498,8 +497,8 @@ Graph.prototype.update = function () {
 				})
 				.linkStrength(1) // 0.8
 				.friction(0.9)
-				.gravity(0.06) //.gravity(0.1) // important! make the groups distinguishable
-				.theta(0.6) //.theta(0.8)
+				.gravity(0.03) //.gravity(0.1) // important! make the groups distinguishable; the smaller the better
+				//.theta(0.6) //.theta(0.8)
 				//.alpha(0.1)
 				.size([width, height]);
 
@@ -574,8 +573,8 @@ Graph.prototype.update = function () {
 			return obj.node_r(d); 
 		})
 		.on("click", function(d) {
-			/*
 			if (d3.event.defaultPrevented) return; // ignore drag
+			/*
 			obj.click_node(d);
 			console.log("click:" + d.index);
 			console.log("in:");
@@ -609,7 +608,7 @@ Graph.prototype.update = function () {
 		.attr("dy", offset)
 		.text(function(d) { 
 			//return d.name;
-			return d.sum_in / AMOUNT_UNIT;
+			return d.sum_out / AMOUNT_UNIT;
 		});
 	/// R for resize ///
 	// this.resize(0);
@@ -940,8 +939,16 @@ Graph.prototype.resize = function(type) {
 		new_w = Math.max(this.graph_w + 2 * this.padding, this.width);
 		new_h = Math.max(this.graph_h + 2 * this.padding, this.height);
 	}
+	this.width = new_w;
+	this.height = new_h;
 	this.svg.attr("width", new_w).attr("height", new_h);
 	this.force.size([new_w, new_h]).resume();
+	///
+	var block_graph_elem = document.getElementById("block_graph_svg");
+	for (var i = 0; i < DragList.length; i++) {
+		DragList[i].resizeContainer(block_graph_elem);
+	}
+	///
 }
 /// R ///
 

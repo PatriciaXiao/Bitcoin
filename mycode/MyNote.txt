@@ -131,3 +131,7 @@ online demo: 另一套可用于实验室集群以及web服务器，这些服务�
 http://www.coindesk.com/api/
 
 // data structure
+
+git/papers/2016.ChinaVis.Bitcoin.git
+
+--bare --share

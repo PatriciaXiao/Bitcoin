@@ -92,12 +92,13 @@ $(document).ready(function(){
 /*
 document.onreadystatechange = function () {
 	console.log("on ready state change\n");
-	
-	console.log(document.getElementById("block_graph").clientWidth);
-	console.log(document.getElementById("block_graph").clientHeight);
-	console.log(document.getElementById("block_graph").scrollLeft);
-	console.log(document.getElementById("block_graph").scrollWidth);
-	console.log(document.getElementById("block_graph").offsetWidth);
+	var block_graph_elem = document.getElementById("#block_graph");
+	console.log(block_graph_elem);
+	//console.log(document.getElementById("block_graph").clientWidth);
+	//console.log(document.getElementById("block_graph").clientHeight);
+	//console.log(document.getElementById("block_graph").scrollLeft);
+	//console.log(document.getElementById("block_graph").scrollWidth);
+	//console.log(document.getElementById("block_graph").offsetWidth);
 	
 }; 
 */
@@ -105,14 +106,20 @@ document.onreadystatechange = function () {
 function PrefixNumber(num, length) {
  return (Array(length).join('0') + num).slice(-length);
 }
-//应用
+
+var DragList = [];
 window.onload = function ()
 {
+	var block_graph_elem = document.getElementById("block_graph_svg");
+	//console.log(block_graph_elem);
+
 	var block_selection_bar = document.getElementById("block_selection");
 	var block_selection_title = block_selection_bar.getElementsByTagName("h3")[0];
-	var block_selection_drag = new Drag(block_selection_bar, {handle:block_selection_title, limit:true});
+	//maxContainer = "block_graph_svg" would also work
+	var block_selection_drag = new Drag(block_selection_bar, {handle:block_selection_title, limit:true, maxContainer: block_graph_elem});
 	block_selection_bar.style.left = 0;
 	block_selection_bar.style.top = "300px";
+
 
 	/*
 	block_selection_drag.onMove = function ()
@@ -122,15 +129,21 @@ window.onload = function ()
 
 	var block_description_bar = document.getElementById("block_description");
 	var block_description_title = block_description_bar.getElementsByTagName("h3")[0];
-	var block_description_drag = new Drag(block_description_bar, {handle:block_description_title, limit:true});
+	var block_description_drag = new Drag(block_description_bar, {handle:block_description_title, limit:true, maxContainer: block_graph_elem});
 	block_description_bar.style.left = 0;//randX;
 	block_description_bar.style.top = 0;
 
 	var node_description_bar = document.getElementById("node_description");
 	var node_description_title = node_description_bar.getElementsByTagName("h3")[0];
-	var node_description_drag = new Drag(node_description_bar, {handle:node_description_title, limit:true});
+	var node_description_drag = new Drag(node_description_bar, {handle:node_description_title, limit:true, maxContainer: block_graph_elem});
 	node_description_bar.style.left = 0;//randX;
 	node_description_bar.style.top = "150px";
+
+	DragList.push(block_selection_drag);
+	DragList.push(block_description_drag);
+	DragList.push(node_description_drag);
+	// console.log(DragList[0]);
+	// DragList[0].resizeContainer(block_graph_elem);
 };
 //////////
 
@@ -154,11 +167,21 @@ function showblock() {
 
 function ToggleSiderbar(elem) {
 	//console.log(elem.id);
+	var goal_bar = "";
 	switch (elem.id) {
-		case "toggle_block_sel": $("#block_selection").toggle(1000); break;
-		case "toggle_block_desc": $("#block_description").toggle(1000); break;
-		case "toggle_node_desc": $("#node_description").toggle(1000); break;
+		case "toggle_block_sel": goal_bar = "#block_selection"; break;
+		case "toggle_block_desc": goal_bar = "#block_description"; break;
+		case "toggle_node_desc": goal_bar = "#node_description"; break;
 		default: console.log("unknown id: " + elem.id); break;
+	}
+	//$(goal_bar).toggle(1000);
+	//console.log(elem.checked);
+	if (elem.checked) {
+		$(goal_bar).slideDown('slow');
+	}
+	else {
+		// toggle up
+		$(goal_bar).slideUp();
 	}
 }
 

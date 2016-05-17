@@ -35,6 +35,13 @@ Drag.prototype = {
 		this.changeLayout();
 		
 		this.addHandler(this.handle, "mousedown", this.bind(this, this.startDrag))
+
+	},
+	resizeContainer: function (container) {
+		// when the window resize
+		this.maxContainer = container;
+		this.maxTop = Math.max(this.maxContainer.clientHeight, this.maxContainer.scrollHeight) - this.drag.offsetHeight;
+		this.maxLeft = Math.max(this.maxContainer.clientWidth, this.maxContainer.scrollWidth) - this.drag.offsetWidth;
 	},
 	changeLayout : function ()
 	{
