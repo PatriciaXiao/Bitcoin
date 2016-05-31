@@ -135,3 +135,17 @@ http://www.coindesk.com/api/
 git/papers/2016.ChinaVis.Bitcoin.git
 
 --bare --share
+
+D:/texlive
+
+filter: n, amount, degree, etc. (统计 histogram)
+layout: 
+radviz: radio vis (subgraph)
+virtual nides: attract a certain types of nodes.
+
+1 reference: 50+ (15p+) (economic vis) (bitcoin)
+2 introduct: 3p
+ reference 15p 
+ analysis, model, graph (main) (15p+)
+ system (10p)
+ conclusion (3p) //主要贡献

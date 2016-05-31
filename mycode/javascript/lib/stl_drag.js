@@ -42,6 +42,12 @@ Drag.prototype = {
 		this.maxContainer = container;
 		this.maxTop = Math.max(this.maxContainer.clientHeight, this.maxContainer.scrollHeight) - this.drag.offsetHeight;
 		this.maxLeft = Math.max(this.maxContainer.clientWidth, this.maxContainer.scrollWidth) - this.drag.offsetWidth;
+		// move back to canvas
+		var iTop = this.maxContainer.clientHeight - this.drag.offsetTop;
+		var iLeft = this.maxContainer.clientWidth - this.drag.offsetLeft;
+		this.limit && (iTop < 0 && (iTop = 0), iLeft < 0 && (iLeft = 0), iTop > this.maxTop && (iTop = this.maxTop), iLeft > this.maxLeft && (iLeft = this.maxLeft));
+		this.drag.style.top = iTop;
+		this.drag.style.left = iLeft;
 	},
 	changeLayout : function ()
 	{

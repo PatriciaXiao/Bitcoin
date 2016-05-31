@@ -133,3 +133,9 @@ table {
 	word-wrap: break-word; 
 }
 */
+
+.block_info_href_text:hover {
+	cursor: pointer;
+	color: red;
+}
+/*#id:hover*/

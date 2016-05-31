@@ -161,8 +161,8 @@ Graph.prototype.init = function() {
 	var idx_input = -1;
 	var idx_output = -1;
 	var idx_link = -1;
-	var sum_in = 0;
-	var sum_out = 0;
+	//var sum_in = 0;
+	//var sum_out = 0;
 	var idx_trans = -1; // equivalent to virtual_node_used = false;
 	/////
 	var total_in = 0;
@@ -170,307 +170,329 @@ Graph.prototype.init = function() {
 	/////
 	var cand_nodelist = []; // candidate node list
 	var tmp_map = new Map();
-	// the first tx
-	input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[0].tx[0].out[0].value}}];
-	output_list[0] = rawdata.blocks[0].tx[0].out;
-	time_list[0] = time_list[i] = rawdata.blocks[0].tx[0].time;
-	// not the first tx
-	for (var i = 1; i < rawdata.blocks[0].tx.length; i++) {
-		input_list[i] = rawdata.blocks[0].tx[i].inputs;
-		output_list[i] = rawdata.blocks[0].tx[i].out;
-		time_list[i] = rawdata.blocks[0].tx[i].time;
-	}
-	// start processing the data
-	for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
-		cand_nodelist = []; // candidate node list
-		tmp_map.clear();
-		sum_in = sum_out = 0;
-		for (var j = 0; j < input_list[i].length; j++) {
-			// decide the node's index (parent-child)
-			//console.log("input i="+i+" j="+j+ "\naddr: " + input_list[i][j].prev_out.addr + "\nindex:"+this.addr_list.get(input_list[i][j].prev_out.addr)+"\n");
-			var tmp = this.addr_list.get(input_list[i][j].prev_out.addr);
-			var cand_nodelist_idx = tmp_map.get(tmp);
-			if (tmp != undefined && cand_nodelist_idx == undefined) {
-				tmp_map.put(tmp, cand_nodelist.length);
-				cand_nodelist.push(tmp);
-			}
-		}
-		// merge the nodes
-		if (cand_nodelist.length > 0) {
-			var tmp_idx = 0;
-			idx_input = cand_nodelist[0];
-			for (var j = 1; j < cand_nodelist.length; j++) {
-				if (cand_nodelist[j] < idx_input) {
-					idx_input = cand_nodelist[j];
-					tmp_idx = j;
-				}
-			}
-			if (tmp_idx != 0) {
-				//console.log("switching two elements in cand_nodelist: [0]"+cand_nodelist[0]+", with ["+tmp_idx+"]"+cand_nodelist[tmp_idx]);
-				var tmp_elem = cand_nodelist[0];
-				cand_nodelist[0] = cand_nodelist[tmp_idx];
-				cand_nodelist[tmp_idx] = tmp_elem;
-				tmp_map.put(cand_nodelist[0], 0);
-				tmp_map.put(cand_nodelist[tmp_idx], tmp_idx);
-				//console.log("...... Done. Now it is: [0]"+cand_nodelist[0]+", with ["+tmp_idx+"]"+cand_nodelist[tmp_idx]);
-			} // idx_input should be kept unchanged and by default it is the 0-th element
-		}
-		else{
-			idx_input = -1;
-		}
-		for (var j = 1; j < cand_nodelist.length; j++) { // for each candicate // notice: what if two candidates are the same?
-			// merge all of them onto idx_input by:
-			//console.log("Merging......"+"Node"+cand_nodelist[j]+".......to: Node"+idx_input);
-			// 1. passing all the children
-			for (var k = 0; k < graph.init_nodes[cand_nodelist[j]]._children.length; k++) { // for each child
-				//console.log("k:"+k+"\n");
-				this.addr_list.put(graph.init_nodes[cand_nodelist[j]]._children[k].addr, idx_input);
-				graph.init_nodes[idx_input]._children.push(graph.init_nodes[cand_nodelist[j]]._children[k]);
-			}
-			//    check 1
-			/*
-			for (var k = 0; k < graph.init_nodes[cand_nodelist[j]]._children.length; k++) { // for each child
-				console.log(idx_input+"=="+this.addr_list.get(graph.init_nodes[cand_nodelist[j]]._children[k].addr));
-				console.log(graph.init_nodes[idx_input]._children);
-			}	
-			*/		
-			// 2. re-calculate: e.g. accumulate times (and latter on, amount)
-			graph.init_nodes[idx_input].times += graph.init_nodes[cand_nodelist[j]].times;
-			graph.init_nodes[idx_input].amount = graph.init_nodes[cand_nodelist[j]].amount.concat(graph.init_nodes[idx_input].amount);
-			graph.init_nodes[idx_input].from = graph.init_nodes[cand_nodelist[j]].from.concat(graph.init_nodes[idx_input].from);
-			graph.init_nodes[idx_input].to = graph.init_nodes[cand_nodelist[j]].to.concat(graph.init_nodes[idx_input].to);
-			graph.init_nodes[idx_input].sum_in += graph.init_nodes[cand_nodelist[j]].sum_in;
-			graph.init_nodes[idx_input].sum_out += graph.init_nodes[cand_nodelist[j]].sum_out;
-			//		check 2
-			// console.log(graph.init_nodes[idx_input].times);
-			// 3. for now, don't really remove the node in the init_node array, instead, I choose to take the tail to replace their blanks
-			// ATTENTION: what if the element to be get rid of is the very last one for now?
-			if (graph.init_nodes.length-1 != cand_nodelist[j]) {
-				//console.log(graph.init_nodes.length);
-				//graph.init_nodes[cand_nodelist[j]] = graph.init_nodes[graph.init_nodes.length - 1];
-				graph.init_nodes[cand_nodelist[j]] = graph.init_nodes[graph.init_nodes.length - 1];
-				for (var k = 0; k < graph.init_nodes[graph.init_nodes.length-1]._children.length; k++) { // for each child
-					this.addr_list.put(graph.init_nodes[graph.init_nodes.length-1]._children[k].addr, cand_nodelist[j]);
-				}
-			}
-			/*console.log("trying to ...... move node (idx in graph.init_nodes) "+cand_nodelist[j] + " to idx "+idx_input
-				+"\nand move idx "+(graph.init_nodes.length-1)+" to idx "+ cand_nodelist[j]);
-			console.log(graph.init_nodes.length);
-			console.log(cand_nodelist[j]);
-			console.log(graph.init_nodes[cand_nodelist[j]]);
-			*/
-			graph.init_nodes.pop();
-			cnt_node--; // very very important
-			/*
-			console.log(graph.init_nodes.length);
-			console.log(cand_nodelist[j]);
-			console.log(graph.init_nodes[cand_nodelist[j]]);
-			*/
-			// 4. change all the links involving 
-			//		(mainly: cand_nodelist[j] -> idx_input; graph.init_nodes.length-1 -> cand_nodelist[j])
-			for (var k = 0; k < graph.init_links.length; k++) {
-				if (graph.init_links[k].source == cand_nodelist[j]) {
-					graph.init_links[k].source = idx_input;
-				}
-				if (graph.init_links[k].target == cand_nodelist[j]) {
-					graph.init_links[k].target = idx_input;
-				}
-			}
-			if (graph.init_nodes.length != cand_nodelist[j]) {
-				for (var k = 0; k < graph.init_links.length; k++) {
-					if (graph.init_links[k].source == graph.init_nodes.length) {
-						graph.init_links[k].source = cand_nodelist[j];
-					}
-					if (graph.init_links[k].target == graph.init_nodes.length) {
-						graph.init_links[k].target = cand_nodelist[j];
-					}
-				}
-			}
-			// 5. change the rest of cand_nodelist if influenced
-			
-			var cand_nodelist_idx;
-			/*
-			cand_nodelist_idx = tmp_map.get(cand_nodelist[j]);
-			if (cand_nodelist_idx != undefined) {
-				// cand_nodelist[j] -> idx_input
-				cand_nodelist[cand_nodelist_idx] = idx_input;
-			}
-			*/
-			cand_nodelist_idx = tmp_map.get(graph.init_nodes.length);
-			//console.log("hello "+cand_nodelist_idx +","+cand_nodelist[cand_nodelist_idx]);
-			if (cand_nodelist_idx != undefined) {
-				// graph.init_nodes.length-1 -> cand_nodelist[j]
-				cand_nodelist[cand_nodelist_idx] = cand_nodelist[j];
-			}
+	// console.log(rawdata.blocks.length);
 
-		}
-		
-		if (idx_input == -1) { // not yet inserted
-			
-			graph.init_nodes[cnt_node] = 
-					{"name": NickName(0, cnt_node), 
-					"addr": cnt_node,
-					"time": [], "status": [],
-					"color_val": false, //i,
-					"times": 1,
-					"amount": [],
-					"sum_in": 0,
-					"sum_out": 0,
-					"from": [], //idx
-					"to": [],
-					"_children": []};
+	var cnt_node = 0, cnt_link = 0;
+	for (var selected_block = 0; selected_block < rawdata.blocks.length; selected_block++) {
+		//
+		/*
+			// the first tx
+			input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[0].tx[0].out[0].value}}];
+			output_list[0] = rawdata.blocks[0].tx[0].out;
+			time_list[0] = time_list[i] = rawdata.blocks[0].tx[0].time;
+			// not the first tx
+			for (var i = 1; i < rawdata.blocks[0].tx.length; i++) {
+				input_list[i] = rawdata.blocks[0].tx[i].inputs;
+				output_list[i] = rawdata.blocks[0].tx[i].out;
+				time_list[i] = rawdata.blocks[0].tx[i].time;
+			}
+		*/
 
-			idx_input = cnt_node;
+		// the first tx
+		input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[selected_block].tx[0].out[0].value}}];
+		output_list[0] = rawdata.blocks[selected_block].tx[0].out;
+		time_list[0] = time_list[i] = rawdata.blocks[selected_block].tx[0].time;
+		// not the first tx
+		for (var i = 1; i < rawdata.blocks[selected_block].tx.length; i++) {
+			input_list[i] = rawdata.blocks[selected_block].tx[i].inputs;
+			output_list[i] = rawdata.blocks[selected_block].tx[i].out;
+			time_list[i] = rawdata.blocks[selected_block].tx[i].time;
+		}
+
+		// start processing the data
+		//for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
+		for (var i = 0; i < rawdata.blocks[selected_block].tx.length; i++) {
+			cand_nodelist = []; // candidate node list
+			tmp_map.clear();
+			// sum_in = sum_out = 0;
 			for (var j = 0; j < input_list[i].length; j++) {
-				// update information for each node
-				this.addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
-				//console.log(this.addr_list.get(input_list[i][j].prev_out.addr));
-				graph.init_nodes[cnt_node].time.push(time_list[i]);
-				graph.init_nodes[cnt_node].status.push(1); // input
-				graph.init_nodes[cnt_node].amount.push(input_list[i][j].prev_out.value);
-				graph.init_nodes[cnt_node].sum_in += input_list[i][j].prev_out.value;
-				graph.init_nodes[cnt_node]._children[j] = 
-						{"name": NickName(1, input_list[i][j].prev_out.addr), 
-						"addr": input_list[i][j].prev_out.addr,
-						"time": [time_list[i]], "status": [1],
-						"color_val": false, //color_val[i], 
-						"times": 1, "amount": [input_list[i][j].prev_out.value],
-						"sum_in": input_list[i][j].prev_out.value,
-						"sum_out": 0, 
+				// decide the node's index (parent-child)
+				//console.log("input i="+i+" j="+j+ "\naddr: " + input_list[i][j].prev_out.addr + "\nindex:"+this.addr_list.get(input_list[i][j].prev_out.addr)+"\n");
+				var tmp = this.addr_list.get(input_list[i][j].prev_out.addr);
+				var cand_nodelist_idx = tmp_map.get(tmp);
+				if (tmp != undefined && cand_nodelist_idx == undefined) {
+					tmp_map.put(tmp, cand_nodelist.length);
+					cand_nodelist.push(tmp);
+				}
+			}
+			// merge the nodes
+			if (cand_nodelist.length > 0) {
+				var tmp_idx = 0;
+				idx_input = cand_nodelist[0];
+				for (var j = 1; j < cand_nodelist.length; j++) {
+					if (cand_nodelist[j] < idx_input) {
+						idx_input = cand_nodelist[j];
+						tmp_idx = j;
+					}
+				}
+				if (tmp_idx != 0) {
+					//console.log("switching two elements in cand_nodelist: [0]"+cand_nodelist[0]+", with ["+tmp_idx+"]"+cand_nodelist[tmp_idx]);
+					var tmp_elem = cand_nodelist[0];
+					cand_nodelist[0] = cand_nodelist[tmp_idx];
+					cand_nodelist[tmp_idx] = tmp_elem;
+					tmp_map.put(cand_nodelist[0], 0);
+					tmp_map.put(cand_nodelist[tmp_idx], tmp_idx);
+					//console.log("...... Done. Now it is: [0]"+cand_nodelist[0]+", with ["+tmp_idx+"]"+cand_nodelist[tmp_idx]);
+				} // idx_input should be kept unchanged and by default it is the 0-th element
+			}
+			else{
+				idx_input = -1;
+			}
+			for (var j = 1; j < cand_nodelist.length; j++) { // for each candicate // notice: what if two candidates are the same?
+				// merge all of them onto idx_input by:
+				//console.log("Merging......"+"Node"+cand_nodelist[j]+".......to: Node"+idx_input);
+				// 1. passing all the children
+				for (var k = 0; k < graph.init_nodes[cand_nodelist[j]]._children.length; k++) { // for each child
+					//console.log("k:"+k+"\n");
+					this.addr_list.put(graph.init_nodes[cand_nodelist[j]]._children[k].addr, idx_input);
+					graph.init_nodes[idx_input]._children.push(graph.init_nodes[cand_nodelist[j]]._children[k]);
+				}
+				//    check 1
+				/*
+				for (var k = 0; k < graph.init_nodes[cand_nodelist[j]]._children.length; k++) { // for each child
+					console.log(idx_input+"=="+this.addr_list.get(graph.init_nodes[cand_nodelist[j]]._children[k].addr));
+					console.log(graph.init_nodes[idx_input]._children);
+				}	
+				*/		
+				// 2. re-calculate: e.g. accumulate times (and latter on, amount)
+				graph.init_nodes[idx_input].times += graph.init_nodes[cand_nodelist[j]].times;
+				graph.init_nodes[idx_input].amount = graph.init_nodes[cand_nodelist[j]].amount.concat(graph.init_nodes[idx_input].amount);
+				graph.init_nodes[idx_input].from = graph.init_nodes[cand_nodelist[j]].from.concat(graph.init_nodes[idx_input].from);
+				graph.init_nodes[idx_input].to = graph.init_nodes[cand_nodelist[j]].to.concat(graph.init_nodes[idx_input].to);
+				graph.init_nodes[idx_input].sum_in += graph.init_nodes[cand_nodelist[j]].sum_in;
+				graph.init_nodes[idx_input].sum_out += graph.init_nodes[cand_nodelist[j]].sum_out;
+				//		check 2
+				// console.log(graph.init_nodes[idx_input].times);
+				// 3. for now, don't really remove the node in the init_node array, instead, I choose to take the tail to replace their blanks
+				// ATTENTION: what if the element to be get rid of is the very last one for now?
+				if (graph.init_nodes.length-1 != cand_nodelist[j]) {
+					//console.log(graph.init_nodes.length);
+					//graph.init_nodes[cand_nodelist[j]] = graph.init_nodes[graph.init_nodes.length - 1];
+					graph.init_nodes[cand_nodelist[j]] = graph.init_nodes[graph.init_nodes.length - 1];
+					for (var k = 0; k < graph.init_nodes[graph.init_nodes.length-1]._children.length; k++) { // for each child
+						this.addr_list.put(graph.init_nodes[graph.init_nodes.length-1]._children[k].addr, cand_nodelist[j]);
+					}
+				}
+				/*console.log("trying to ...... move node (idx in graph.init_nodes) "+cand_nodelist[j] + " to idx "+idx_input
+					+"\nand move idx "+(graph.init_nodes.length-1)+" to idx "+ cand_nodelist[j]);
+				console.log(graph.init_nodes.length);
+				console.log(cand_nodelist[j]);
+				console.log(graph.init_nodes[cand_nodelist[j]]);
+				*/
+				graph.init_nodes.pop();
+				cnt_node--; // very very important
+				/*
+				console.log(graph.init_nodes.length);
+				console.log(cand_nodelist[j]);
+				console.log(graph.init_nodes[cand_nodelist[j]]);
+				*/
+				// 4. change all the links involving 
+				//		(mainly: cand_nodelist[j] -> idx_input; graph.init_nodes.length-1 -> cand_nodelist[j])
+				for (var k = 0; k < graph.init_links.length; k++) {
+					if (graph.init_links[k].source == cand_nodelist[j]) {
+						graph.init_links[k].source = idx_input;
+					}
+					if (graph.init_links[k].target == cand_nodelist[j]) {
+						graph.init_links[k].target = idx_input;
+					}
+				}
+				if (graph.init_nodes.length != cand_nodelist[j]) {
+					for (var k = 0; k < graph.init_links.length; k++) {
+						if (graph.init_links[k].source == graph.init_nodes.length) {
+							graph.init_links[k].source = cand_nodelist[j];
+						}
+						if (graph.init_links[k].target == graph.init_nodes.length) {
+							graph.init_links[k].target = cand_nodelist[j];
+						}
+					}
+				}
+				// 5. change the rest of cand_nodelist if influenced
+				
+				var cand_nodelist_idx;
+				/*
+				cand_nodelist_idx = tmp_map.get(cand_nodelist[j]);
+				if (cand_nodelist_idx != undefined) {
+					// cand_nodelist[j] -> idx_input
+					cand_nodelist[cand_nodelist_idx] = idx_input;
+				}
+				*/
+				cand_nodelist_idx = tmp_map.get(graph.init_nodes.length);
+				//console.log("hello "+cand_nodelist_idx +","+cand_nodelist[cand_nodelist_idx]);
+				if (cand_nodelist_idx != undefined) {
+					// graph.init_nodes.length-1 -> cand_nodelist[j]
+					cand_nodelist[cand_nodelist_idx] = cand_nodelist[j];
+				}
+
+			}
+			
+			if (idx_input == -1) { // not yet inserted
+				
+				graph.init_nodes[cnt_node] = 
+						{"name": NickName(0, cnt_node), 
+						"addr": cnt_node,
+						"time": [], "status": [],
+						"color_val": false, //i,
+						"times": 1,
+						"amount": [],
+						"sum_in": 0,
+						"sum_out": 0,
 						"from": [], //idx
 						"to": [],
 						"_children": []};
+
+				idx_input = cnt_node;
+				for (var j = 0; j < input_list[i].length; j++) {
+					// update information for each node
+					this.addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
+					//console.log(this.addr_list.get(input_list[i][j].prev_out.addr));
+					graph.init_nodes[cnt_node].time.push(time_list[i]);
+					graph.init_nodes[cnt_node].status.push(1); // input
+					graph.init_nodes[cnt_node].amount.push(input_list[i][j].prev_out.value);
+					graph.init_nodes[cnt_node].sum_in += input_list[i][j].prev_out.value;
+					graph.init_nodes[cnt_node]._children[j] = 
+							{"name": NickName(1, input_list[i][j].prev_out.addr), 
+							"addr": input_list[i][j].prev_out.addr,
+							"time": [time_list[i]], "status": [1],
+							"color_val": false, //color_val[i], 
+							"times": 1, "amount": [input_list[i][j].prev_out.value],
+							"sum_in": input_list[i][j].prev_out.value,
+							"sum_out": 0, 
+							"from": [], //idx
+							"to": [],
+							"_children": []};
+				}
+				cnt_node++;
 			}
-			cnt_node++;
-		}
-		else {
-			// insert into graph.init_nodes[idx_input]
-			for (var j = 0; j < input_list[i].length; j++) {
-				// count++
-				graph.init_nodes[idx_input].times++;
-				graph.init_nodes[idx_input].time.push(time_list[i]); // moved here
-				graph.init_nodes[idx_input].status.push(1);
-				graph.init_nodes[idx_input].amount.push(input_list[i][j].prev_out.value);
-				graph.init_nodes[idx_input].sum_in += input_list[i][j].prev_out.value;
-				// judge if the node did exist
-				var tmp = this.addr_list.get(input_list[i][j].prev_out.addr);
-				if (tmp == idx_input) {
-					// already exist; very IMPORTANT: latter this would be used for "merge"; for now, we agree for sure that merge isn't required
-					//    that is to say, tmp == idx_input
-					// find the corresponding child node
+			else {
+				// insert into graph.init_nodes[idx_input]
+				for (var j = 0; j < input_list[i].length; j++) {
+					// count++
+					graph.init_nodes[idx_input].times++;
+					graph.init_nodes[idx_input].time.push(time_list[i]); // moved here
+					graph.init_nodes[idx_input].status.push(1);
+					graph.init_nodes[idx_input].amount.push(input_list[i][j].prev_out.value);
+					graph.init_nodes[idx_input].sum_in += input_list[i][j].prev_out.value;
+					// judge if the node did exist
+					var tmp = this.addr_list.get(input_list[i][j].prev_out.addr);
+					if (tmp == idx_input) {
+						// already exist; very IMPORTANT: latter this would be used for "merge"; for now, we agree for sure that merge isn't required
+						//    that is to say, tmp == idx_input
+						// find the corresponding child node
+						var idx_addr = -1;
+						for (var k = 0; k < graph.init_nodes[idx_input]._children.length; k++) {
+							if (graph.init_nodes[idx_input]._children[k].addr == input_list[i][j].prev_out.addr) {
+								idx_addr = k;
+								break;
+							}
+						}
+						graph.init_nodes[idx_input]._children[idx_addr].times++;
+						graph.init_nodes[idx_input]._children[idx_addr].time.push(time_list[i]);//don't forget
+						graph.init_nodes[idx_input]._children[idx_addr].status.push(1);
+						graph.init_nodes[idx_input]._children[idx_addr].amount.push(input_list[i][j].prev_out.value);
+						graph.init_nodes[idx_input]._children[idx_addr].sum_in += input_list[i][j].prev_out.value;
+					}
+					else {
+						this.addr_list.put(input_list[i][j].prev_out.addr, idx_input);
+						graph.init_nodes[idx_input]._children.push(
+								{"name": NickName(1, input_list[i][j].prev_out.addr),
+								"addr": input_list[i][j].prev_out.addr,
+								"time": [time_list[i]], "status": [1],
+								"color_val": false, //color_val[i], 
+								"times": 1, "amount": [input_list[i][j].prev_out.value], 
+								"sum_in": input_list[i][j].prev_out.value,
+								"sum_out": 0,
+								"from": [], //idx
+								"to": [],
+								"_children": []});
+					}
+				}			
+			}
+			// output list
+			for (var j = 0; j < output_list[i].length; j++) { // for each output
+				// decide the nodes's index
+				// graph.init_nodes[cnt_node] = {"name": output_list[i][j].addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": []};
+				// check if it's been existed
+				idx_output = this.addr_list.get(output_list[i][j].addr);
+				//console.log("j="+j+"\n"+"addr="+output_list[i][j].addr+"\n"+"idx_output="+idx_output);
+				if (idx_output == undefined) {
+					// not existed yet
+					graph.init_nodes[cnt_node] = 
+							{"name": NickName(0, cnt_node),
+							"addr": cnt_node,
+							"time": [time_list[i]], "status": [0],
+							"color_val": false, //i, 
+							"times": 1, "amount": [output_list[i][j].value], 
+							"sum_in": 0,
+							"sum_out": output_list[i][j].value,
+							"from": [], //idx
+							"to": [],
+							"_children": []};
+					graph.init_nodes[cnt_node]._children[0] = 
+							{"name": NickName(1, output_list[i][j].addr),
+							"addr": output_list[i][j].addr,
+							"time": [time_list[i]], "status": [0],
+							"color_val": false, //color_val[i], 
+							"times": 1, "amount": [output_list[i][j].value], 
+							"sum_in": 0,
+							"sum_out": output_list[i][j].value,
+							"from": [], //idx
+							"to": [],
+							"_children": []};
+					this.addr_list.put(output_list[i][j].addr, cnt_node);
+					idx_output = cnt_node;
+					cnt_node++;
+				}
+				else {
+					// has already existed
 					var idx_addr = -1;
-					for (var k = 0; k < graph.init_nodes[idx_input]._children.length; k++) {
-						if (graph.init_nodes[idx_input]._children[k].addr == input_list[i][j].prev_out.addr) {
+					for(var k = 0; k < graph.init_nodes[idx_output]._children.length; k++) {
+						// find the goal addr
+						if (graph.init_nodes[idx_output]._children[k].addr == output_list[i][j].addr) {
 							idx_addr = k;
 							break;
 						}
 					}
-					graph.init_nodes[idx_input]._children[idx_addr].times++;
-					graph.init_nodes[idx_input]._children[idx_addr].time.push(time_list[i]);//don't forget
-					graph.init_nodes[idx_input]._children[idx_addr].status.push(1);
-					graph.init_nodes[idx_input]._children[idx_addr].amount.push(input_list[i][j].prev_out.value);
-					graph.init_nodes[idx_input]._children[idx_addr].sum_in += input_list[i][j].prev_out.value;
-				}
-				else {
-					this.addr_list.put(input_list[i][j].prev_out.addr, idx_input);
-					graph.init_nodes[idx_input]._children.push(
-							{"name": NickName(1, input_list[i][j].prev_out.addr),
-							"addr": input_list[i][j].prev_out.addr,
-							"time": [time_list[i]], "status": [1],
-							"color_val": false, //color_val[i], 
-							"times": 1, "amount": [input_list[i][j].prev_out.value], 
-							"sum_in": input_list[i][j].prev_out.value,
-							"sum_out": 0,
-							"from": [], //idx
-							"to": [],
-							"_children": []});
-				}
-			}			
-		}
-		// output list
-		for (var j = 0; j < output_list[i].length; j++) { // for each output
-			// decide the nodes's index
-			// graph.init_nodes[cnt_node] = {"name": output_list[i][j].addr, "color_val": color_val[i], "times": 1, "amount": 1, "children": []};
-			// check if it's been existed
-			idx_output = this.addr_list.get(output_list[i][j].addr);
-			//console.log("j="+j+"\n"+"addr="+output_list[i][j].addr+"\n"+"idx_output="+idx_output);
-			if (idx_output == undefined) {
-				// not existed yet
-				graph.init_nodes[cnt_node] = 
-						{"name": NickName(0, cnt_node),
-						"addr": cnt_node,
-						"time": [time_list[i]], "status": [0],
-						"color_val": false, //i, 
-						"times": 1, "amount": [output_list[i][j].value], 
-						"sum_in": 0,
-						"sum_out": output_list[i][j].value,
-						"from": [], //idx
-						"to": [],
-						"_children": []};
-				graph.init_nodes[cnt_node]._children[0] = 
-						{"name": NickName(1, output_list[i][j].addr),
-						"addr": output_list[i][j].addr,
-						"time": [time_list[i]], "status": [0],
-						"color_val": false, //color_val[i], 
-						"times": 1, "amount": [output_list[i][j].value], 
-						"sum_in": 0,
-						"sum_out": output_list[i][j].value,
-						"from": [], //idx
-						"to": [],
-						"_children": []};
-				this.addr_list.put(output_list[i][j].addr, cnt_node);
-				idx_output = cnt_node;
-				cnt_node++;
-			}
-			else {
-				// has already existed
-				var idx_addr = -1;
-				for(var k = 0; k < graph.init_nodes[idx_output]._children.length; k++) {
-					// find the goal addr
-					if (graph.init_nodes[idx_output]._children[k].addr == output_list[i][j].addr) {
-						idx_addr = k;
-						break;
+					if (idx_addr == -1) {
+						// has no such child here:: regarded as impossible
+						console.log("error: child-parent mapping error");
 					}
+					graph.init_nodes[idx_output].time.push[time_list[i]];
+					graph.init_nodes[idx_output].status.push(0); // output
+					graph.init_nodes[idx_output].amount.push(output_list[i][j].value);
+					graph.init_nodes[idx_output].sum_out += output_list[i][j].value;
+					graph.init_nodes[idx_output]._children[idx_addr].time.push(time_list[i]);
+					graph.init_nodes[idx_output]._children[idx_addr].status.push(0);//output
+					graph.init_nodes[idx_output]._children[idx_addr].amount.push(output_list[i][j].value);
+					graph.init_nodes[idx_output]._children[idx_addr].sum_out = output_list[i][j].value;
+					//graph.init_nodes[idx_output]._children[idx_addr].from.push(idx_output);
+					graph.init_nodes[idx_output]._children[idx_addr].times++;
 				}
-				if (idx_addr == -1) {
-					// has no such child here:: regarded as impossible
-					console.log("error: child-parent mapping error");
-				}
-				graph.init_nodes[idx_output].time.push[time_list[i]];
-				graph.init_nodes[idx_output].status.push(0); // output
-				graph.init_nodes[idx_output].amount.push(output_list[i][j].value);
-				graph.init_nodes[idx_output].sum_out += output_list[i][j].value;
-				graph.init_nodes[idx_output]._children[idx_addr].time.push(time_list[i]);
-				graph.init_nodes[idx_output]._children[idx_addr].status.push(0);//output
-				graph.init_nodes[idx_output]._children[idx_addr].amount.push(output_list[i][j].value);
-				graph.init_nodes[idx_output]._children[idx_addr].sum_out = output_list[i][j].value;
-				//graph.init_nodes[idx_output]._children[idx_addr].from.push(idx_output);
-				graph.init_nodes[idx_output]._children[idx_addr].times++;
-			}
-			// links
-			//console.log("linking......"+graph.init_nodes[idx_input].addr+" with "+graph.init_nodes[idx_output].addr);
-			if (idx_input != idx_output) {
-				var idx_link = -1;
-				for (var k = 0; k < cnt_link; k++) {
-					// already existed
-					if (graph.init_links[k].source == idx_input && graph.init_links[k].target == idx_output) {
-						idx_link = k;
-						graph.init_links[k].value++;
-						break;
+				// links
+				//console.log("linking......"+graph.init_nodes[idx_input].addr+" with "+graph.init_nodes[idx_output].addr);
+				if (idx_input != idx_output) {
+					var idx_link = -1;
+					for (var k = 0; k < cnt_link; k++) {
+						// already existed
+						if (graph.init_links[k].source == idx_input && graph.init_links[k].target == idx_output) {
+							idx_link = k;
+							graph.init_links[k].value++;
+							break;
+						}
 					}
-				}
-				// haven't included
-				if (idx_link == -1) {
-					//graph.init_nodes[idx_input].to.push(idx_output);
-					//graph.init_nodes[idx_output].from.push(idx_input);
-					graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1, "type": 1, "distance": 0};
-					cnt_link++;
+					// haven't included
+					if (idx_link == -1) {
+						//graph.init_nodes[idx_input].to.push(idx_output);
+						//graph.init_nodes[idx_output].from.push(idx_input);
+						graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1, "type": 1, "distance": 0};
+						cnt_link++;
+					}
 				}
 			}
 		}
 	}
-	/////
+
 	delete tmp_map;
+
 	graph.nodes = graph.init_nodes;
 	graph.links = graph.init_links;
 	this.graph = graph;
@@ -683,6 +705,8 @@ Graph.prototype.update_graph_data = function () {
 				graph.child_links[graph.child_links.length] = 
 							{"source": i, "target": graph.init_nodes.length + graph.child_nodes.length + j,
 							"value": 1, "type": 0, "distance": 0};
+				graph.init_nodes[i].children[j].x = graph.init_nodes[i].x;
+				graph.init_nodes[i].children[j].y = graph.init_nodes[i].y;
 			}
 			graph.child_nodes = graph.child_nodes.concat(graph.init_nodes[i].children);
 		}
@@ -944,7 +968,9 @@ Graph.prototype.resize = function(type) {
 	this.svg.attr("width", new_w).attr("height", new_h);
 	this.force.size([new_w, new_h]).resume();
 	///
+	// resize the range where the draggable bars could move in
 	var block_graph_elem = document.getElementById("block_graph_svg");
+	//console.log(DragList);
 	for (var i = 0; i < DragList.length; i++) {
 		DragList[i].resizeContainer(block_graph_elem);
 	}

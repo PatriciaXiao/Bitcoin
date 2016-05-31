@@ -26,6 +26,7 @@ var LIST_LEN_THRESHOLD = 8;
 var DATE_TYPE = 1;//0;
 
 var GRAPH;
+var DragList = [];
 
 /* js could be loaded dynamically this way:
  * however after examine others' code carefully I didn't see any necessarity of doing such things
@@ -38,30 +39,6 @@ document.head.appendChild(new_element);
 */
 
 // functions about block
-//var RAW_DATA;
-//var GRAPH_DAT;
-//var ADDR_LIST = new Map(); // function included in mymap.js
-
-//var currentZoom = 1.0;
-/*
- $(function() {
-    $("#slider-vertical").slider({
-      orientation: "vertical",
-      //range: "min",
-      min: 0,
-      max: 100, // 100
-      value: 0, // 60
-      slide: function( event, ui ) {
-      	var zoom_val = ui.value / 100;
-        $("#amount").val( zoom_val ); // / 100
-        //currentZoom = 1 + zoom_val;
-        //GRAPH.update();
-        $('#block_graph_svg').animate({ 'zoom': 1 + zoom_val }, 'fast'); // "slow"
-      }
-    });
-    $("#amount").val( $( "#slider-vertical" ).slider( "value" ) );
-  });
-*/
 
 $(document).ready(function(){
 	var iframeHeight = function () {
@@ -74,44 +51,15 @@ $(document).ready(function(){
 	});
 });
 
-/*
-$(document).ready(function(){
-	var iframeHeight = function () {
-		var _height = G_HEIGHT;
-		$('#block_graph').height(_height);
-	}
-	window.onresize = iframeHeight;
-	$(function () {
-		iframeHeight();
-	});
-});
-*/
-
-/* functions */
-// the entrance of drawing the block
-/*
-document.onreadystatechange = function () {
-	console.log("on ready state change\n");
-	var block_graph_elem = document.getElementById("#block_graph");
-	console.log(block_graph_elem);
-	//console.log(document.getElementById("block_graph").clientWidth);
-	//console.log(document.getElementById("block_graph").clientHeight);
-	//console.log(document.getElementById("block_graph").scrollLeft);
-	//console.log(document.getElementById("block_graph").scrollWidth);
-	//console.log(document.getElementById("block_graph").offsetWidth);
-	
-}; 
-*/
 ///////////////////////
 function PrefixNumber(num, length) {
  return (Array(length).join('0') + num).slice(-length);
 }
 
-var DragList = [];
+
 window.onload = function ()
 {
 	var block_graph_elem = document.getElementById("block_graph_svg");
-	//console.log(block_graph_elem);
 
 	var block_selection_bar = document.getElementById("block_selection");
 	var block_selection_title = block_selection_bar.getElementsByTagName("h3")[0];
@@ -119,13 +67,6 @@ window.onload = function ()
 	var block_selection_drag = new Drag(block_selection_bar, {handle:block_selection_title, limit:true, maxContainer: block_graph_elem});
 	block_selection_bar.style.left = 0;
 	block_selection_bar.style.top = "300px";
-
-
-	/*
-	block_selection_drag.onMove = function ()
-	{
-		console.log("left:" + this.drag.offsetLeft + ", top:" + this.drag.offsetTop);
-	};//*/
 
 	var block_description_bar = document.getElementById("block_description");
 	var block_description_title = block_description_bar.getElementsByTagName("h3")[0];
@@ -142,12 +83,44 @@ window.onload = function ()
 	DragList.push(block_selection_drag);
 	DragList.push(block_description_drag);
 	DragList.push(node_description_drag);
-	// console.log(DragList[0]);
-	// DragList[0].resizeContainer(block_graph_elem);
 };
 //////////
+function ShowMultiBlocks() {
+	whole_graph.checked = false;
+	var blocks = block_height.value;
+	var GraphData = {"blocks": []};
+	//console.log(parseInt(blocks, 10));
+	//console.log(blocks.split(","));
+	//var goal_block = [0, 1, 2, 3, 4];//[0, -1, 2, 3, 4];
+	var goal_block = blocks.split(" ");
+	for (var i = 0; i < goal_block.length; i++) {
+		goal_block[i] = parseInt(goal_block[i], 10);
+	}
+	//console.log(goal_block);
+	for (var i = 0; i < goal_block.length; i++) {
+		//goal_file = FILE_DIR + goal_block[i] + ".json"; // couldn't do this, otherwise there'll be bugs
+		d3.json(FILE_DIR + goal_block[i] + ".json", function(error, rawdata) {
+			if (error) throw error;
+			//console.log(rawdata.blocks[0].height);
+			GraphData.blocks.push(rawdata.blocks[0]);
+			if (rawdata.blocks[0].height == goal_block[goal_block.length - 1]) {
+				//console.log(GraphData);
+				/*
+				ShowBlockInfo(rawdata);
+				GRAPH = new Graph(rawdata, "block_graph");
+				GRAPH.init();
+				*/
+				GRAPH = new Graph(GraphData, "block_graph");
+				GRAPH.init();
+				ShowBlocksInfo(0);
+			}
+			
+		});
+	}
+	//console.log(tmp_rawdat_list);
+}
 
-
+// the entrance of drawing the block
 function showblock() {
 	// reset
 	whole_graph.checked = false;
@@ -310,6 +283,52 @@ function ShowBlockInfo(rawdata) {
 	block_fee = parseFloat(block_fee.toFixed(8));
 	var block_n_tx = rawdata.blocks[0].n_tx;
 	var block_time = rawdata.blocks[0].time;
+	var block_time_array = formatDate(block_time, 2);
+	document.getElementById("block_description_height").innerHTML = block_height;
+	document.getElementById("block_description_fee").innerHTML = block_fee.toPrecision(16);//PrefixNumber(block_fee, 20);
+	document.getElementById("block_description_ntx").innerHTML = block_n_tx;
+	document.getElementById("block_description_year").innerHTML = PrefixNumber(block_time_array[0], 4);
+	document.getElementById("block_description_mon").innerHTML = getMonthStr(block_time_array[1]);
+	document.getElementById("block_description_date").innerHTML = PrefixNumber(block_time_array[2], 2);
+	document.getElementById("block_description_day").innerHTML = getDayStr(block_time_array[3]);
+	document.getElementById("block_description_hour").innerHTML = PrefixNumber(block_time_array[4], 2);
+	document.getElementById("block_description_min").innerHTML = PrefixNumber(block_time_array[5], 2);
+	document.getElementById("block_description_sec").innerHTML = PrefixNumber(block_time_array[6], 2);
+	//var block_hash = rawdata.blocks[0].hash;
+}
+
+function UpdateBlocksInfo(direction) {
+	var idx_tmp = parseInt(document.getElementById("temp_block_sel").innerHTML) - 1;
+	var idx_sum = parseInt(document.getElementById("num_block_sel").innerHTML);
+	var idx_next = -1;
+	if (idx_tmp == "NaN" || idx_sum == "NaN") {
+		console.log("error: init block information");
+		return;
+	}
+	// console.log(direction);
+	// false for forward, true for afterward
+	if (direction && (idx_tmp < idx_sum - 1)) {
+		idx_next = idx_tmp + 1;
+		//console.log(idx_next + "=" + idx_tmp + "+ 1");
+	} else if ((!direction) && (idx_tmp > 0)) {
+		idx_next = idx_tmp - 1;
+	}
+	// update
+	if (idx_next != -1) {
+		//console.log(idx_next);
+		ShowBlocksInfo(idx_next);
+	}
+}
+
+function ShowBlocksInfo(i) {
+	var rawdata = GRAPH.rawdata;
+	document.getElementById("temp_block_sel").innerHTML = i + 1;
+	document.getElementById("num_block_sel").innerHTML = rawdata.blocks.length;
+	var block_height = rawdata.blocks[i].height;
+	var block_fee = rawdata.blocks[i].fee / AMOUNT_UNIT;
+	block_fee = parseFloat(block_fee.toFixed(8));
+	var block_n_tx = rawdata.blocks[i].n_tx;
+	var block_time = rawdata.blocks[i].time;
 	var block_time_array = formatDate(block_time, 2);
 	document.getElementById("block_description_height").innerHTML = block_height;
 	document.getElementById("block_description_fee").innerHTML = block_fee.toPrecision(16);//PrefixNumber(block_fee, 20);
