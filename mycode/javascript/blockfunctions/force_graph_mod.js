@@ -54,6 +54,10 @@ function Graph(rawdata, id) {
 		this.param_r["k1"] = AMOUNT_UNIT * k1;
 		this.param_r["k2"] = k2;
 	}
+	// highlight
+	this.toggle = false;
+	this.node_selected = undefined;
+	this.union_set = new UnionFindMap();
 }
 
 //[C1, C1 - k1 / C2] = [1, 2]
@@ -144,8 +148,13 @@ Graph.prototype.click_node = function(d) {
 		this.update_graph_data();
 		this.update();
 	}
+
 	// show information
 	ShowNodeInfo(d);
+
+	this.node_selected = d;
+	// console.log(d.index);
+	this.highlight();
 }
 
 //Graph.prototype.InitCollapsibleGraph = function() {
@@ -174,19 +183,6 @@ Graph.prototype.init = function() {
 
 	var cnt_node = 0, cnt_link = 0;
 	for (var selected_block = 0; selected_block < rawdata.blocks.length; selected_block++) {
-		//
-		/*
-			// the first tx
-			input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[0].tx[0].out[0].value}}];
-			output_list[0] = rawdata.blocks[0].tx[0].out;
-			time_list[0] = time_list[i] = rawdata.blocks[0].tx[0].time;
-			// not the first tx
-			for (var i = 1; i < rawdata.blocks[0].tx.length; i++) {
-				input_list[i] = rawdata.blocks[0].tx[i].inputs;
-				output_list[i] = rawdata.blocks[0].tx[i].out;
-				time_list[i] = rawdata.blocks[0].tx[i].time;
-			}
-		*/
 
 		// the first tx
 		input_list[0] = [{ "prev_out": {"addr": "0000000000000000000000000000000000", "value": rawdata.blocks[selected_block].tx[0].out[0].value}}];
@@ -199,15 +195,12 @@ Graph.prototype.init = function() {
 			time_list[i] = rawdata.blocks[selected_block].tx[i].time;
 		}
 
-		// start processing the data
-		//for (var i = 0, cnt_node = 0, cnt_link = 0; i < rawdata.blocks[0].tx.length; i++) {
+		// start processing the data of a block
 		for (var i = 0; i < rawdata.blocks[selected_block].tx.length; i++) {
 			cand_nodelist = []; // candidate node list
 			tmp_map.clear();
-			// sum_in = sum_out = 0;
 			for (var j = 0; j < input_list[i].length; j++) {
 				// decide the node's index (parent-child)
-				//console.log("input i="+i+" j="+j+ "\naddr: " + input_list[i][j].prev_out.addr + "\nindex:"+this.addr_list.get(input_list[i][j].prev_out.addr)+"\n");
 				var tmp = this.addr_list.get(input_list[i][j].prev_out.addr);
 				var cand_nodelist_idx = tmp_map.get(tmp);
 				if (tmp != undefined && cand_nodelist_idx == undefined) {
@@ -257,8 +250,8 @@ Graph.prototype.init = function() {
 				// 2. re-calculate: e.g. accumulate times (and latter on, amount)
 				graph.init_nodes[idx_input].times += graph.init_nodes[cand_nodelist[j]].times;
 				graph.init_nodes[idx_input].amount = graph.init_nodes[cand_nodelist[j]].amount.concat(graph.init_nodes[idx_input].amount);
-				graph.init_nodes[idx_input].from = graph.init_nodes[cand_nodelist[j]].from.concat(graph.init_nodes[idx_input].from);
-				graph.init_nodes[idx_input].to = graph.init_nodes[cand_nodelist[j]].to.concat(graph.init_nodes[idx_input].to);
+				//graph.init_nodes[idx_input].from = graph.init_nodes[cand_nodelist[j]].from.concat(graph.init_nodes[idx_input].from);
+				//graph.init_nodes[idx_input].to = graph.init_nodes[cand_nodelist[j]].to.concat(graph.init_nodes[idx_input].to);
 				graph.init_nodes[idx_input].sum_in += graph.init_nodes[cand_nodelist[j]].sum_in;
 				graph.init_nodes[idx_input].sum_out += graph.init_nodes[cand_nodelist[j]].sum_out;
 				//		check 2
@@ -281,6 +274,14 @@ Graph.prototype.init = function() {
 				*/
 				graph.init_nodes.pop();
 				cnt_node--; // very very important
+
+				// 3.2. union-find map (for grouping use)
+				/*
+				this.union_set.union(idx_input, cand_nodelist[j]); // it could cause bugs
+				this.union_set.switch(cand_nodelist[j], graph.init_nodes.length - 1);
+				this.union_set.pop();
+				*/
+
 				/*
 				console.log(graph.init_nodes.length);
 				console.log(cand_nodelist[j]);
@@ -336,11 +337,12 @@ Graph.prototype.init = function() {
 						"amount": [],
 						"sum_in": 0,
 						"sum_out": 0,
-						"from": [], //idx
-						"to": [],
+						//"from": [], //idx
+						//"to": [],
 						"_children": []};
 
 				idx_input = cnt_node;
+
 				for (var j = 0; j < input_list[i].length; j++) {
 					// update information for each node
 					this.addr_list.put(input_list[i][j].prev_out.addr, cnt_node);
@@ -357,10 +359,13 @@ Graph.prototype.init = function() {
 							"times": 1, "amount": [input_list[i][j].prev_out.value],
 							"sum_in": input_list[i][j].prev_out.value,
 							"sum_out": 0, 
-							"from": [], //idx
-							"to": [],
+							//"from": [], //idx
+							//"to": [],
 							"_children": []};
 				}
+
+				// this.union_set.insert(cnt_node);
+
 				cnt_node++;
 			}
 			else {
@@ -401,8 +406,8 @@ Graph.prototype.init = function() {
 								"times": 1, "amount": [input_list[i][j].prev_out.value], 
 								"sum_in": input_list[i][j].prev_out.value,
 								"sum_out": 0,
-								"from": [], //idx
-								"to": [],
+								//"from": [], //idx
+								//"to": [],
 								"_children": []});
 					}
 				}			
@@ -424,8 +429,8 @@ Graph.prototype.init = function() {
 							"times": 1, "amount": [output_list[i][j].value], 
 							"sum_in": 0,
 							"sum_out": output_list[i][j].value,
-							"from": [], //idx
-							"to": [],
+							//"from": [], //idx
+							//"to": [],
 							"_children": []};
 					graph.init_nodes[cnt_node]._children[0] = 
 							{"name": NickName(1, output_list[i][j].addr),
@@ -435,11 +440,14 @@ Graph.prototype.init = function() {
 							"times": 1, "amount": [output_list[i][j].value], 
 							"sum_in": 0,
 							"sum_out": output_list[i][j].value,
-							"from": [], //idx
-							"to": [],
+							//"from": [], //idx
+							//"to": [],
 							"_children": []};
 					this.addr_list.put(output_list[i][j].addr, cnt_node);
 					idx_output = cnt_node;
+
+					// this.union_set.insert(cnt_node);
+
 					cnt_node++;
 				}
 				else {
@@ -484,6 +492,7 @@ Graph.prototype.init = function() {
 						//graph.init_nodes[idx_input].to.push(idx_output);
 						//graph.init_nodes[idx_output].from.push(idx_input);
 						graph.init_links[cnt_link] = {"source": idx_input, "target": idx_output, "value": 1, "type": 1, "distance": 0};
+						// this.union_set.union(idx_input, idx_output);
 						cnt_link++;
 					}
 				}
@@ -565,8 +574,6 @@ Graph.prototype.update = function () {
 	/// H for Highlight
 	// preparation
 	this.pre_highlight_neighbor();
-	// this.pre_highlight_chain();
-	// this.pre_highlight_subgraph();
 	/// H
 
 	// set the links
@@ -596,26 +603,14 @@ Graph.prototype.update = function () {
 		})
 		.on("click", function(d) {
 			if (d3.event.defaultPrevented) return; // ignore drag
-			/*
-			obj.click_node(d);
-			console.log("click:" + d.index);
-			console.log("in:");
-			for (var i = 0; i < d.from.length; i++) {
-				console.log(d.from[i]);
-			}
-			console.log("out:");
-			for (var i = 0; i < d.to.length; i++) {
-				console.log(d.to[i]);
-			}
-			*/
 			return obj.click_node(d);
 		})
 		/// H for highlight
+		/*
 		.on('dblclick', function (d) {
 			obj.connected_neighbor(d, obj);
-			//obj.connected_chain(d, obj);
-			//obj.connected_subgraph(d, obj);
-		})//; //Added code 
+		})//; //Added code
+		*/
 		/// H
 		.style("fill", function(d) { return obj.color(d); });
 
@@ -671,17 +666,6 @@ Graph.prototype.update = function () {
 		/// C
 	}
 
-	//console.log([document.getElementById("block_graph").clientWidth, document.getElementById("block_graph").clientHeight]);
-	//console.log(node);
-	/*
-	console.log(svg);
-	console.log(svg[0][0].clientWidth);
-	console.log(svg[0][0].clientHeight);
-	console.log(graph.nodes);
-	console.log(graph.nodes[0].x);
-	console.log(graph.nodes[1].x);
-	*/
-
 	this.force = force;
 	this.svg = svg;
 	this.node = node;
@@ -693,20 +677,14 @@ Graph.prototype.update_graph_data = function () {
 	// modify the new graph	
 	graph.child_nodes = [];
 	graph.child_links = [];
-	//console.log("length="+graph.init_nodes.length);
-	//console.log(graph.init_nodes[5]);
-	//console.log(graph.init_nodes[6]);
-	//graph.init_nodes[5] = graph.init_nodes[6]; //debug
 	for (var i = 0; i < graph.init_nodes.length; i++) {
-		//console.log("i="+i);
-		//console.log(graph.init_nodes[i]);
 		if (graph.init_nodes[i].children) {
 			for (var j = 0; j < graph.init_nodes[i].children.length; j++) {
 				graph.child_links[graph.child_links.length] = 
 							{"source": i, "target": graph.init_nodes.length + graph.child_nodes.length + j,
 							"value": 1, "type": 0, "distance": 0};
-				graph.init_nodes[i].children[j].x = graph.init_nodes[i].x;
-				graph.init_nodes[i].children[j].y = graph.init_nodes[i].y;
+				//graph.init_nodes[i].children[j].x = graph.init_nodes[i].x;
+				//graph.init_nodes[i].children[j].y = graph.init_nodes[i].y;
 			}
 			graph.child_nodes = graph.child_nodes.concat(graph.init_nodes[i].children);
 		}
@@ -750,137 +728,52 @@ Graph.prototype.collide = function(alpha) {
 /// C
 
 /// H for Highlight
-Graph.prototype.pre_highlight_subgraph = function() {
-	//Toggle stores whether the highlighting is on
+Graph.prototype.highlight = function() {
+	// select a method to highlight
+	this.toggle = node_highlight_option.checked;
+	// this.connected_subgraph(); // this.union_set
+	// version 0: neighbour
+	this.connected_neighbor(); 
+}
+Graph.prototype.connected_subgraph = function() {
+	var d = this.node_selected;
+	if (d == undefined) return;
 	var obj = this;
-	obj.toggle = 0;
-	//Create an array logging what is connected to what
-	this.linkedByIndex = new Object();//{};
-	for (i = 0; i < graph.nodes.length; i++) {
-		this.linkedByIndex[i + "," + i] = 1;
-	};
-	this.graph.links.forEach(function (d) {
-		obj.linkedByIndex[d.source.index + "," + d.target.index] = 1;
-	});
-}
-Graph.prototype.linking = function (a, b) {
-	return this.linkedByIndex[a.index + "," + b.index];
-}
-Graph.prototype.connected_subgraph = function (d, obj) {
-	if (obj.toggle == 0) {
+	// console.log(d.index);
+	var subgraph_id = this.union_set.find(d.index);
+	if (obj.toggle == true) {
 		//Reduce the opacity of all but the neighbouring nodes
 		obj.node.style("opacity", function (o) {
 			// linked together
-			if (obj.linking(d, o) || obj.linking(o, d)) {
-				return 1; // highlighted
+			var opacity = 0.1;
+			if (obj.union_set.find(o.index) == subgraph_id ||
+				obj.union_set.find(obj.addr_list.get(o.addr)) == subgraph_id) {
+				//return 0.66; // highlighted
+				opacity = 0.6;
+				if (o == d)
+					opacity = 1;
 			}
-			else {
-				return 0.1; // hide
-			}
+			return opacity;
 		});
 		obj.link.style("opacity", function (o) {
-			if (d.index==o.source.index || d.index==o.target.index) {
+			if (obj.union_set.find(o.source.index) == subgraph_id || obj.union_set.find(o.target.index) == subgraph_id) {
 				return 1;
 			}
 			else {
 				return 0.1;
 			}
 		});
-		obj.toggle = 1;
 	}
-	else {
+	else { // obj.toggle == 1
 		//Put them back to opacity=1
 		obj.node.style("opacity", 1);
 		obj.link.style("opacity", 1);
-		obj.toggle = 0;
 	}
-} 
-/////////
-Graph.prototype.pre_highlight_chain = function() {
-	var obj = this;
-	obj.toggle = 0;
 }
-Graph.prototype.chaining = function(idx, type) {
-	// calculate linked elements
-	// console.log([d.index, type]);
-	if (type != "from" && type != "to" && type != "both") {
-		console.log("type unknown");
-		return;
-	}
-	var d = this.graph.nodes[idx];
-	// from
-	if (type != "to") {
-		for (var i = 0; i < d.from.length; i++) {
-			if (this.chained_nodes[d.from[i]] == true && this.chained_links[[d.from[i], idx]] == true) {
-				// visited by "from"
-				continue;
-			}
-			this.chained_nodes[d.from[i]] = true;
-			this.chained_links[[d.from[i], idx]] = true;
-			this.chaining(d.from[i], type);
-		}
-	}
-	// to
-	if (type != "from") { //!= from
-		for (var i = 0; i < d.to.length; i++) {
-			//if (this.chained_nodes[d.to[i]] == true) {
-			if (this.chained_nodes[d.to[i]] == true && this.chained_links[[idx, d.to[i]]] == true) {
-				// visited
-				continue;
-			}
-			this.chained_nodes[d.to[i]] = true;
-			this.chained_links[[idx, d.to[i]]] = true;
-			this.chaining(d.to[i], type);
-		}
-	}
-	return;
-}
-Graph.prototype.connected_chain = function (d, obj) {
-	if (obj.toggle == 0) {
-		//Reduce the opacity of all but the chaining nodes
-		this.chained_nodes = new Object();
-		this.chained_links = new Object(); //new Object();
-		for (var i = 0; i < obj.node[0].length; i++) {
-			this.chained_nodes[i] = false;
-		}
-		this.chained_nodes[d.index] = true;
-		var type = "both";//"to";//"from";
-		obj.chaining(d.index, type); // type = "from" / "to" / "both"
-		obj.node.style("opacity", function (o) {
-			// linked together
-			if (obj.chained_nodes[o.index]) {
-				return 1; // highlighted
-			}
-			else {
-				return 0.1; // hide
-			}
-		});
-		obj.link.style("opacity", function (o) {
-			//if (obj.chained_nodes[o.source.index] && obj.chained_nodes[o.target.index]) {
-			if (obj.chained_links[[o.source.index, o.target.index]] == true 
-				|| obj.chained_links[[o.target.index, o.source.index]] == true) {
-				return 1;
-			}
-			else {
-				return 0.1;
-			}
-		});
-		obj.toggle = 1;
-		delete obj.chained_nodes;
-		delete obj.chained_links;
-	}
-	else {
-		//Put them back to opacity=1
-		obj.node.style("opacity", 1);
-		obj.link.style("opacity", 1);
-		obj.toggle = 0;
-	}
-} 
 /////////
 Graph.prototype.pre_highlight_neighbor = function() {
 	//Toggle stores whether the highlighting is on
 	var obj = this;
-	obj.toggle = 0;
 	//Create an array logging what is connected to what
 	this.linkedByIndex = new Object();//{};
 	for (i = 0; i < graph.nodes.length; i++) {
@@ -894,40 +787,26 @@ Graph.prototype.neighboring = function (a, b) {
 	return this.linkedByIndex[a.index + "," + b.index];
 }
 // This function looks up whether a pair are neighbours
-/*
-Graph.prototype.connectedNodes = function (d, obj) {
-	// this = a node
-	if (obj.toggle == 0) {
-	//Reduce the opacity of all but the neighbouring nodes
-		//d = d3.select(this).node().__data__;
-		obj.node.style("opacity", function (o) {
-			return obj.neighboring(d, o) | obj.neighboring(o, d) ? 1 : 0.1;
-		});
-		obj.link.style("opacity", function (o) {
-			return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
-		});
-		//Reduce the op
-		obj.toggle = 1;
-	}
-	else {
-		//Put them back to opacity=1
-		obj.node.style("opacity", 1);
-		obj.link.style("opacity", 1);
-		obj.toggle = 0;
-	}
-}
-*/
-Graph.prototype.connected_neighbor = function (d, obj) {
-	if (obj.toggle == 0) {
+Graph.prototype.connected_neighbor = function () {
+	var d = this.node_selected;
+	// console.log(d);
+	if (d == undefined) return;
+	var obj = this;
+	if (obj.toggle == true) {
 		//Reduce the opacity of all but the neighbouring nodes
 		obj.node.style("opacity", function (o) {
 			// linked together
+			var opacity = 0.1;
 			if (obj.neighboring(d, o) || obj.neighboring(o, d)) {
-				return 1; // highlighted
+				//return 0.66; // highlighted
+				opacity = 0.6;
+				if (o == d)
+					opacity = 1;
 			}
-			else {
-				return 0.1; // hide
-			}
+			//else {
+			//	return 0.1; // hide
+			//}
+			return opacity;
 		});
 		obj.link.style("opacity", function (o) {
 			if (d.index==o.source.index || d.index==o.target.index) {
@@ -937,13 +816,11 @@ Graph.prototype.connected_neighbor = function (d, obj) {
 				return 0.1;
 			}
 		});
-		obj.toggle = 1;
 	}
-	else {
+	else { // obj.toggle == 1
 		//Put them back to opacity=1
 		obj.node.style("opacity", 1);
 		obj.link.style("opacity", 1);
-		obj.toggle = 0;
 	}
 } 
 /// highlight

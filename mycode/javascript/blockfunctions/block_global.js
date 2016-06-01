@@ -53,7 +53,11 @@ $(document).ready(function(){
 
 ///////////////////////
 function PrefixNumber(num, length) {
- return (Array(length).join('0') + num).slice(-length);
+	return (Array(length).join('0') + num).slice(-length);
+}
+
+function NodeHighLight() {
+	GRAPH.highlight();
 }
 
 
@@ -66,7 +70,7 @@ window.onload = function ()
 	//maxContainer = "block_graph_svg" would also work
 	var block_selection_drag = new Drag(block_selection_bar, {handle:block_selection_title, limit:true, maxContainer: block_graph_elem});
 	block_selection_bar.style.left = 0;
-	block_selection_bar.style.top = "300px";
+	block_selection_bar.style.top = "400px";
 
 	var block_description_bar = document.getElementById("block_description");
 	var block_description_title = block_description_bar.getElementsByTagName("h3")[0];

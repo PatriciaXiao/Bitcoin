@@ -20,6 +20,7 @@
 
 		<script type="text/javascript" src = "./javascript/lib/stl_map.js"></script>
 		<script type="text/javascript" src = "./javascript/lib/stl_drag.js"></script>
+		<script type="text/javascript" src = "./javascript/lib/stl_union_find.js"></script>
 
 		<script type="text/javascript" src = "./javascript/blockfunctions/force_graph_mod.js"></script>
 		<script type="text/javascript" src = "./javascript/blockfunctions/block_global.js"></script>
@@ -213,6 +214,14 @@
 						</th>
 						<td align="left">
 							<span id = "node_description_id">undefined</span>
+							
+							<p>
+							<label name="node_highlight_option">
+								<input type="checkbox" id="node_highlight_option" name="node_highlight_option" onchange="NodeHighLight();">
+									Highlight
+								</lnput>
+							</label>
+							</p>
 						</td>
 					</tr>
 					<tr>
