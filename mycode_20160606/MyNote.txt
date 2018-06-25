@@ -1,0 +1,157 @@
+cd C:\Users\Patricia\Desktop\Bitcoin\mycode\python
+cd C:\Users\Patricia\Desktop\Bitcoin\mycode\
+
+bug1: // console
+XMLHttpRequest cannot load file:///C:/Users/Patricia/Desktop/Bitcoin/mycode/info.json. Cross origin requests are only supported for protocol schemes: http, data, chrome, chrome-extension, https, chrome-extension-resource.
+
+cd to your project directory, for instance
+
+cd /home/erick/mysuperproject
+and then simply use
+
+cd C:\Users\Patricia\Desktop\Bitcoin\mycode
+cd C:\Users\Patricia\Desktop\Bitcoin\othercode
+python -m SimpleHTTPServer
+python -m SimpleHTTPServer 8080 #指定端口号
+
+in the browser:
+
+http://localhost:8000
+
+bug2: // console
+favicon.ico:1 GET http://localhost:8000/favicon.ico 404 (File not found)
+
+http://stackoverflow.com/questions/1321878/how-to-prevent-favicon-ico-requests
+
+http://www.bitbug.net/
+
+bug3: // coding
+$getjson could not return value correctly
+
+http://www.cnblogs.com/hqjma/p/3169556.html
+
+it should be used within the load function, as it is not synch (file read setting)
+
+
+http://www.ourd3js.com/demo/
+
+
+reflist1: D3
+https://d3js.org/
+https://github.com/mbostock/d3/wiki/Gallery
+http://javascript.ruanyifeng.com/library/d3.html
+http://www.oschina.net/p/d3
+
+<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+reflist2: jQuery
+http://www.w3school.com.cn/jquery/index.asp
+http://api.jquery.com/jQuery.getJSON/
+
+reflist3: project
+
+http://bl.ocks.org/mbostock/4062045
+http://www.coppelia.io/2014/07/an-a-to-z-of-extra-features-for-the-d3-force-layout/
+https://github.com/d3/d3-plugins/tree/master/fisheye
+https://bost.ocks.org/mike/fisheye/
+
+additional:
+sigma
+http://sigmajs.org/
+
+
+
+remaining problems:
+labeling
+interacting (search)
+
+
+bug4: setting
+// on console
+jquery-2.1.0.min.js:4 POST https://localhost:26143/skypectoc/v1/pnr/parse net::ERR_CONNECTION_REFUSED
+// solusion
+block the skype plugin on chrome
+
+// init_graph - load in; once
+// update_graph - click - child
+
+http://www.open-open.com/lib/view/open1420880796484.html
+
+index merge? (1,2) (3,4) (2,3) like this?
+
+// in each tx
+// all the inputs are from the same account
+if ()
+// output uncertain
+
+array?no, nodelink:
+basic_node: "person"	B_node
+derivative_node: "addr"	D_node
+map(D_node, B_node)
+when new tx is included:
+- check if it has appeared (same addr) in Map
+-- if only once:
+-- if multiple: // merge two existing B_node by:
+----
+- insert it
+
+general->each block
+
+http://vis.pku.edu.cn/wiki/visgroup/projects/tradevis/start
+http://vis.pku.edu.cn/wiki/visgroup/projects/tradevis/browser/start
+
+layout helper:
+http://www.js-css.cn/divcss/layout/
+http://www.layoutit.com/cn
+gmail
+family22
+
+200000:height
+test3
+
+http://jqueryui.com/
+http://www.w3school.com.cn/tags/tag_button.asp
+http://www.runoob.com/jqueryui/example-slider.html
+
+http://www.ibm.com/developerworks/cn/xml/x-svgclientside/index.html
+
+http://vis.pku.edu.cn/Bitcoin/ = 192.168.10.9/Bitcoin
+
+Username: zhiping.xiao
+Password: family22
+
+这个帐号对应于实验室的两套帐号系统。
+git: 其中一套可用于git, svn, openvpn等服务，服务器内网地址是192.168.40.1，外网地址是162.105.71.185。（ssh登录外网地址时需加端口号10022）
+online demo: 另一套可用于实验室集群以及web服务器，这些服务器地址是192.168.10.8-10。(I used .9)
+
+192.168.40.1 git/bitcoin.transaction.git
+
+192.168.10.9 /var/www/html/Bitcoin/javascript
+
+http://www.coindesk.com/api/
+
+// data structure
+
+git/papers/2016.ChinaVis.Bitcoin.git
+
+--bare --share
+
+D:/texlive
+
+filter: n, amount, degree, etc. (统计 histogram)
+layout: 
+radviz: radio vis (subgraph)
+virtual nides: attract a certain types of nodes.
+
+1 reference: 50+ (15p+) (economic vis) (bitcoin)
+2 introduct: 3p
+ reference 15p 
+ analysis, model, graph (main) (15p+)
+ system (10p)
+ conclusion (3p) //主要贡献
+
+
+
+
+
+ conclusion (3p) //主要贡献
